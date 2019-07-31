@@ -1021,6 +1021,12 @@
       kbtlm =  1 - ngz
       ketlm = nktlm + ngz
 
+      if( nktlm.gt.nk )then
+        ! 190731: added this check. Needed so we can use dum arrays
+        print *,'  nktlm must be <= nk:  nktlm,nk = ',nktlm,nk
+        call stopcm1
+      endif
+
       if( myid.eq.0 ) print *
       if( myid.eq.0 ) print *,'  nktlm,dztlm = ',nktlm,dztlm
       if( myid.eq.0 ) print *,'  kbtlm,ketlm = ',kbtlm,ketlm
