@@ -55,7 +55,7 @@
                    tdiag,qdiag,udiag,vdiag,wdiag,kdiag,out2d,out3d,            &
                    getdbz,getvt,                                               &
                    sw31,sw32,se31,se32,ss31,ss32,sn31,sn32,flag,               &
-                   utlm,vtlm,t13tlm,t23tlm,nut_tlm)
+                   utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm)
         ! end turbdiag
     use input
     use constants
@@ -136,6 +136,7 @@
     real, intent(in) , dimension(ib3d:ie3d,jb3d:je3d,kb3d:ke3d,nout3d) :: out3d
     real, intent(inout), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm
     real, intent(inout), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm
+    real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm+1) :: wtlm
     real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm) :: t13tlm,t23tlm,nut_tlm
 
     !---------------------------------------------------------------------------
@@ -4237,6 +4238,27 @@
         do j=1,nj
         do i=1,ni
           dum1(i,j,k) = vtlm(i,j,k)
+        enddo
+        enddo
+        enddo
+
+        call getavg3d(dum1,savg)
+        call write3d(savg,trecs,trecw,trecy,trecz,vargrid,nvar,varname,vardesc,varunit)
+
+      !c-c-c-c-c-c-c-c-c-c
+
+        nvar = nvar+1
+        varname(nvar) = 'wtlm'
+        vardesc(nvar) = 'wtlm'
+        varunit(nvar) = 'm2/s2'
+        vargrid(nvar) = 'z'
+
+        dum1 = 0.0
+
+        do k=1,min(nk,nktlm+1)
+        do j=1,nj
+        do i=1,ni
+          dum1(i,j,k) = wtlm(i,j,k)
         enddo
         enddo
         enddo

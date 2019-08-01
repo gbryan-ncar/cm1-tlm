@@ -1492,9 +1492,9 @@
         IF(nrk.ge.2)THEN
 #ifdef MPI
           call comm_3u_end(u3d,uw31,uw32,ue31,ue32,   &
-                               us31,us32,un31,un32,reqs_u)
+                               us31,us32,un31,un32,reqs_u,nk)
           call comm_3v_end(v3d,vw31,vw32,ve31,ve32,   &
-                               vs31,vs32,vn31,vn32,reqs_v)
+                               vs31,vs32,vn31,vn32,reqs_v,nk)
           call comm_3w_end(w3d,ww31,ww32,we31,we32,   &
                                ws31,ws32,wn31,wn32,reqs_w)
 #endif
@@ -2631,12 +2631,12 @@
       call bcu(u3d,nk)
 #ifdef MPI
       call comm_3u_start(u3d,uw31,uw32,ue31,ue32,   &
-                             us31,us32,un31,un32,reqs_u)
+                             us31,us32,un31,un32,reqs_u,nk)
 #endif
       call bcv(v3d,nk)
 #ifdef MPI
       call comm_3v_start(v3d,vw31,vw32,ve31,ve32,   &
-                             vs31,vs32,vn31,vn32,reqs_v)
+                             vs31,vs32,vn31,vn32,reqs_v,nk)
 #endif
       call bcw(w3d,1)
       if(terrain_flag) call bcwsfc(gz,dzdx,dzdy,u3d,v3d,w3d)
@@ -3965,9 +3965,9 @@
 
 #ifdef MPI
       call comm_3u_end(u3d,uw31,uw32,ue31,ue32,   &
-                           us31,us32,un31,un32,reqs_u)
+                           us31,us32,un31,un32,reqs_u,nk)
       call comm_3v_end(v3d,vw31,vw32,ve31,ve32,   &
-                           vs31,vs32,vn31,vn32,reqs_v)
+                           vs31,vs32,vn31,vn32,reqs_v,nk)
       call comm_3w_end(w3d,ww31,ww32,we31,we32,   &
                            ws31,ws32,wn31,wn32,reqs_w)
 #endif
@@ -4039,11 +4039,11 @@
         ! bc/comms:
         call bcu(rru,nk)
 #ifdef MPI
-        call comm_3u_start(rru,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u)
+        call comm_3u_start(rru,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u,nk)
 #endif
         call bcv(rrv,nk)
 #ifdef MPI
-        call comm_3v_start(rrv,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v)
+        call comm_3v_start(rrv,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v,nk)
 #endif
         call bcw(rrw,1)
 #ifdef MPI
@@ -4245,8 +4245,8 @@
         !  get corner info, ghost zone data, etc:
         !  (may not parallelize correctly if this is not done)
 #ifdef MPI
-        call comm_3u_end( rru,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u)
-        call comm_3v_end( rrv,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v)
+        call comm_3u_end( rru,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u,nk)
+        call comm_3v_end( rrv,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v,nk)
         call comm_3w_end( rrw,ww31,ww32,we31,we32,ws31,ws32,wn31,wn32,reqs_w)
         call getcorneru3(rru,n3w1(1,1,1),n3w2(1,1,1),n3e1(1,1,1),n3e2(1,1,1),  &
                              s3w1(1,1,1),s3w2(1,1,1),s3e1(1,1,1),s3e2(1,1,1))

@@ -17,7 +17,7 @@
                    dum1,dum2,dum3,dum4,dum5,dum6,dum7,dum8,          &
                    divx,rho,rr,rf,prs,                               &
                    t11,t12,t13,t22,t23,t33,                          &
-                   u0,ua ,ugr ,v0,va ,vgr ,wa ,dumw,                 &
+                   u0,ua ,ugr ,utmp ,v0,va ,vgr ,vtmp ,wa ,dumw,     &
                    ppi ,ppten,                                       &
                    tha ,thten,thten1,qa ,                            &
                    kmh,kmv,khh,khv,tkea,tke3d,                       &
@@ -40,9 +40,10 @@
                    pw1,pw2,pe1,pe2,ps1,ps2,pn1,pn2,                  &
                    vw1,vw2,ve1,ve2,vs1,vs2,vn1,vn2,                  &
                    uw31,uw32,ue31,ue32,us31,us32,un31,un32,          &
+                   vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,          &
                    kw1,kw2,ke1,ke2,ks1,ks2,kn1,kn2,                  &
                    iamsat,out2d,out3d,rtime,update_sfc,dosolve,      &
-                   utlm,vtlm,t13tlm,t23tlm,nut_tlm,zftlm,upgtlm,vpgtlm)  ! Aaron Wang, 7/5/2019
+                   utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm,zftlm,upgtlm,vpgtlm)  ! Aaron Wang, 7/5/2019
       ! end_sfc_and_turb
       use input
       use constants
@@ -85,9 +86,9 @@
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: dum1,dum2,dum3,dum4,dum5,dum6,dum7,dum8,divx,rho,rr,rf,prs
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: t11,t12,t13,t22,t23,t33
       real, intent(in), dimension(ib:ie+1,jb:je,kb:ke) :: u0
-      real, intent(inout), dimension(ib:ie+1,jb:je,kb:ke) :: ua,ugr
+      real, intent(inout), dimension(ib:ie+1,jb:je,kb:ke) :: ua,ugr,utmp
       real, intent(in), dimension(ib:ie,jb:je+1,kb:ke) :: v0
-      real, intent(inout), dimension(ib:ie,jb:je+1,kb:ke) :: va,vgr
+      real, intent(inout), dimension(ib:ie,jb:je+1,kb:ke) :: va,vgr,vtmp
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke+1) :: wa,dumw
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: ppi,ppten
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: tha,thten,thten1
@@ -119,6 +120,8 @@
       real, intent(inout), dimension(imp,kmp) :: vs1,vs2,vn1,vn2
       real, intent(inout), dimension(cmp,jmp,kmp)   :: uw31,uw32,ue31,ue32
       real, intent(inout), dimension(imp+1,cmp,kmp) :: us31,us32,un31,un32
+      real, intent(inout), dimension(cmp,jmp+1,kmp) :: vw31,vw32,ve31,ve32
+      real, intent(inout), dimension(imp,cmp,kmp)   :: vs31,vs32,vn31,vn32
       real, intent(inout), dimension(jmp,kmt,4)     :: kw1,kw2,ke1,ke2
       real, intent(inout), dimension(imp,kmt,4)     :: ks1,ks2,kn1,kn2
       logical, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: iamsat
@@ -129,6 +132,7 @@
 
       real, intent(inout), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm  ! Aaron Wang, 7/5/2019
       real, intent(inout), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm  ! Aaron Wang, 7/5/2019
+      real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm+1) :: wtlm
       real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm) :: t13tlm,t23tlm,nut_tlm
       real, intent(inout), dimension(ib:ie,jb:je) :: upgtlm,vpgtlm  ! Aaron Wang, 7/5/2019
       real, intent(in), dimension(0:nktlm+1) :: zftlm  ! Aaron Wang, 7/3/2019
@@ -759,12 +763,22 @@
 !--------------------------------------
 
     IF( cm1setup.eq.1 .or. ipbl.eq.2 .or. horizturb.eq.1 .or. cm1setup.eq.3 )THEN
-
         !  now, get turbulent stresses:
-        call     gettau(xf,rxf,arf1,arf2,ust,u1,v1,s1,u10,v10,s10,xland,cd,ch,cq,rf,mf,dum1,dum2,  &
-                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,va,vgr,ubar,vbar,sbar,use_avg_sfc, &
-                        dosolve,dt,utlm,vtlm,t13tlm,t23tlm,nut_tlm,zftlm,znt,uf,vf,upgtlm,vpgtlm, &  ! Aaron Wang, 7/5/2019
-                        uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u)
+
+        IF( dotlm )THEN
+          ! two-layer model:
+          call   tlmcode(xf,rxf,arf1,arf2,ust,u1,v1,s1,u10,v10,s10,xland,cd,ch,cq,rf,mf,dum1,dum2,  &
+                        dum3,dum4,dum5,dum6,dum7,dum8,uh,vh,                                      &
+                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,utmp,va,vgr,vtmp,ubar,vbar,sbar,use_avg_sfc, &
+                        dosolve,dt,utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm,zftlm,znt,uf,vf,upgtlm,vpgtlm, &  ! Aaron Wang, 7/5/2019
+                        reqs_u,reqs_v,reqs_w,reqs_s,reqs_p,        &
+                        uw31,uw32,ue31,ue32,us31,us32,un31,un32,   &
+                        vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32)
+        ENDIF
+
+        call     gettau(xf,rxf,arf1,arf2,ust,u1,v1,s1,rf,mf,dum1,dum2,  &
+                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,va,vgr,ubar,vbar,sbar,use_avg_sfc,  &
+                        utlm,vtlm,nut_tlm)
 
     ENDIF
 
@@ -1080,9 +1094,9 @@
       do i=1,ni
         grdscl(i,j,k)=( ((dx*ruh(i))*(dy*rvh(j)))*(dz*rmf(i,j,k)) )**0.33333333
         ! cm1r17:  wall condition near surface
-        grdscl(i,j,k) = sqrt(1.0/( 1.0/(grdscl(i,j,k)**2)                                  &
-                                  +1.0/((karman*((zf(i,j,k)-zf(i,j,1))+znt(i,j))*rcs)**2)  &
-                               ) )
+!!!        grdscl(i,j,k) = sqrt(1.0/( 1.0/(grdscl(i,j,k)**2)                                  &
+!!!                                  +1.0/((karman*((zf(i,j,k)-zf(i,j,1))+znt(i,j))*rcs)**2)  &
+!!!                               ) )
         rgrdscl(i,j,k)=1.0/grdscl(i,j,k)
       enddo
       enddo
@@ -1097,9 +1111,9 @@
       do i=1,ni
         grdscl(i,j,k)=dz*rmf(i,j,k)
         ! cm1r17:  wall condition near surface
-        grdscl(i,j,k) = sqrt(1.0/( 1.0/(grdscl(i,j,k)**2)                                  &
-                                  +1.0/((karman*((zf(i,j,k)-zf(i,j,1))+znt(i,j))*rcs)**2)  &
-                               ) )
+!!!        grdscl(i,j,k) = sqrt(1.0/( 1.0/(grdscl(i,j,k)**2)                                  &
+!!!                                  +1.0/((karman*((zf(i,j,k)-zf(i,j,1))+znt(i,j))*rcs)**2)  &
+!!!                               ) )
         rgrdscl(i,j,k)=1.0/grdscl(i,j,k)
       enddo
       enddo
@@ -1879,21 +1893,17 @@
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
+
       ! gettau
-      subroutine gettau(xf,rxf,arf1,arf2,ust,u1,v1,s1,u10,v10,s10,xland,cd,ch,cq,rf,mf,dum1,dum2,  &
-                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,va,vgr,ubar,vbar,sbar,use_avg_sfc, &
-                        dosolve,dt,utlm,vtlm,t13tlm,t23tlm,nut_tlm,zftlm,znt,uf,vf,upgtlm,vpgtlm, &  ! Aaron Wang, 7/3/2019
-                        uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u)
+      subroutine gettau(xf,rxf,arf1,arf2,ust,u1,v1,s1,rf,mf,dum1,dum2,  &
+                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,va,vgr,ubar,vbar,sbar,use_avg_sfc,  &
+                        utlm,vtlm,nut_tlm)
       use input
       use constants
-      use comm_module  ! Aaron Wang, 7/6/2019
-      use bc_module    ! Aaron Wang, 7/6/2019
-      use sfcphys_module, only : getcecd
       implicit none
       
       real, intent(in), dimension(ib:ie+1) :: xf,rxf,arf1,arf2
-      real, intent(inout), dimension(ib:ie,jb:je) :: ust,u1,v1,s1,u10,v10,s10,cd,ch,cq
-      real, intent(in), dimension(ib:ie,jb:je) :: xland
+      real, intent(in), dimension(ib:ie,jb:je) :: ust,u1,v1,s1
       real, intent(in), dimension(ib:ie,jb:je,kb:ke) :: rf
       real, intent(in), dimension(ib:ie,jb:je,kb:ke+1) :: mf
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: dum1,dum2
@@ -1901,31 +1911,14 @@
       real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: t11,t12,t13,t22,t23,t33
       real, intent(in), dimension(ib:ie+1,jb:je,kb:ke) :: ua,ugr
       real, intent(in), dimension(ib:ie,jb:je+1,kb:ke) :: va,vgr
-      logical, intent(in) :: dosolve
-      real, intent(in) :: dt
-      real, intent(inout), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm  ! Aaron Wang, 7/3/2019
-      real, intent(inout), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm  ! Aaron Wang, 7/3/2019
-      real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm) :: t13tlm,t23tlm,nut_tlm
-      real, intent(inout), dimension(ib:ie,jb:je) :: znt  ! Aaron Wang, 7/3/2019
-      real, intent(in), dimension(0:nktlm+1) :: zftlm  ! Aaron Wang, 7/3/2019
-      real, intent(in), dimension(ib:ie+1) :: uf       ! Aaron Wang, 7/4/2019
-      real, intent(in), dimension(jb:je+1) :: vf       ! Aaron Wang, 7/4/2019
-      real, intent(inout), dimension(ib:ie,jb:je) :: upgtlm,vpgtlm  ! Aaron Wang, 7/4/2019
       double precision, intent(inout) :: ubar,vbar,sbar
       logical, intent(in) :: use_avg_sfc
-
-      real, intent(inout), dimension(cmp,jmp,kmp)   :: uw31,uw32,ue31,ue32
-      real, intent(inout), dimension(imp+1,cmp,kmp) :: us31,us32,un31,un32
-      integer, intent(inout), dimension(rmp) :: reqs_u
+      real, intent(in), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm
+      real, intent(in), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm
+      real, intent(in), dimension(ib:ie,jb:je,kbtlm:ketlm) :: nut_tlm
         
-      integer i,j,k,k1,n,niter,tlmsolver
-      real :: tem,crmax,dttmp,cfa,cfb,cfc,cfd,r1,r2,tema,temb,temc
-      real, dimension(0:ni+1,0:nj+1,1:ketlm+1) :: wtlm  ! Aaron Wang, 7/3/2019
-      real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: s13tlm, s23tlm  ! Aaron Wang, 7/3/2019
-      real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: dum1u,dum2u,dum1v,dum2v
-      real, dimension(ib:ie,jb:je) :: z1
-      real :: tmp13,tmp23,def,utentlm, vtentlm  ! Aaron Wang, 7/3/2019
-      real :: tem2,tem3 ! add tem2 and tem3, Aaron Wang, 7/4/2019
+      integer i,j,k
+      real :: tem
 
 !----------------------------------------------------------------------
 !
@@ -2042,524 +2035,7 @@
 
     enddo
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-!----------------------------------------------
-!----- Start of TLM, Aaron Wang, 7/3/2019 -----
-!----------------------------------------------
-
-  IF( dotlm )THEN
-
-
-! Derive wtlm by continuity eq., Aaron Wang, 7/3/2019
-! Need i-1 and j-1 grid for adv. term, so start from 0
-    do k = 1,nktlm+1
-    do j = 0,nj
-    do i = 0,ni
-      if(k .eq. 1)then
-        wtlm(i,j,k) = 0.0
-      else
-        wtlm(i,j,k) =((utlm(i+1,j,k-1) - utlm(i,j,k-1))*rdx  &
-                     +(vtlm(i,j+1,k-1) - vtlm(i,j,k-1))*rdy) &
-                     *(-dztlm) + wtlm(i,j,k-1)
-      endif
-    enddo
-    enddo
-    enddo
-
-    print *,'  utlm,vtlm:'
-    do k=1,nktlm
-      print *,k,utlm(1,1,k),vtlm(1,1,k)
-    enddo
-
-    k1 = nktlm
-    k1 = nktlm/2
-
-!!!    k1 = 0
-!!!    do while( znt(i,j).gt.0.5*(zftlm(k1)+zftlm(k1+1)) .and. k1.lt.nktlm )
-!!!      k1 = k1+1
-!!!    enddo
-
-!    if( k1.eq.0 )then
-!      stop 12443
-!    endif
-!    if( k1.eq.nktlm )then
-!      stop 12444
-!    endif
-
-    do j=0,nj+2
-    do i=0,ni+2
-      z1(i,j) = 0.5*(zftlm(k1)+zftlm(k1+1))
-    enddo
-    enddo
-
-    print *,'  k1,znt,z1 = ',k1,znt(1,1),z1(1,1)
-
-    print *,'  dztlm,rdztlm,znt = ',dztlm,rdztlm,znt(1,1)
-
-    print *,'  k,wtlm,s13tlm,s23tlm,nut_tlm:'
-
-    print *,'  dudz_sfc, O1,O2:',(utlm(1,1,1)-0.0)/(0.5*dztlm)
-
-    do k=1,nktlm+1
-! Derive s13tlm and s23tlm for nut_tlm and t13tlm and t23tlm, Aaron Wang, 7/3/2019
-! Ignore horizontal strain (/dx and /dy) now since it is << /dz.
-!    S_ij  =  0.5 * ( d(u_i)/d(x_j) + d(u_j)/d(x_i) )
-!        so, s13 = 0.5*( du/dz + dw/dx )   -->  0.5*(du/dz)
-!            s23 = 0.5*( dv/dz + dw/dy )   -->  0.5*(dv/dz)
-      if(k .eq. 1)then
-        if( imove.eq.1 )then
-          do j=0,nj+2
-          do i=0,ni+2
-            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) ) + umove
-            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) ) + vmove
-            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
-          enddo
-          enddo
-        else
-          do j=0,nj+2
-          do i=0,ni+2
-            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) )
-            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) )
-            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
-          enddo
-          enddo
-        endif
-        ! tlmcecd:
-        call getcecd(u1,v1,s1,z1,u10,v10,s10,xland,znt,ust,cd,ch,cq,ubar,vbar,sbar,.false.)
-        call bc2d(ust)
-        call bc2d(u1)
-        call bc2d(v1)
-        call bc2d(s1)
-        call bc2d(znt)
-    print *,'  z1,s1,s10,ust = ',z1(1,1),s1(1,1),s10(1,1),ust(1,1)
-        do j=0,nj+2
-        do i=0,ni+2
-          !  Note:  1/(0.5*dz) = 2.0 * (1.0/dz)  = 2.0*rdz
-!!!          s13tlm(i,j,k) = 0.5*utlm(i,j,1)*2.0*rdztlm
-!!!          s23tlm(i,j,k) = 0.5*vtlm(i,j,1)*2.0*rdztlm
-          s13tlm(i,j,1) = 0.5*0.5*(ust(i-1,j)+ust(i,j))/(karman*znt(i,j))
-          s23tlm(i,j,1) = 0.5*0.5*(ust(i,j-1)+ust(i,j))/(karman*znt(i,j))
-        enddo
-        enddo
-      else
-        do j=0,nj+2
-        do i=0,ni+2
-          s13tlm(i,j,k) = 0.5*(utlm(i,j,k)-utlm(i,j,k-1))*rdztlm
-          s23tlm(i,j,k) = 0.5*(vtlm(i,j,k)-vtlm(i,j,k-1))*rdztlm
-        enddo
-        enddo
-      endif
-
-! Derive def then eddy viscosity (nut_tlm), Aaron Wang, 7/3/2019      
-      ! Def = 2.0 * S_ij * S_ij
-      !
-      !     = 2.0 * (  S11*S11 + S12*S12 + S13*S13 
-      !              + S21*S21 + S22*S22 + S23*S23 
-      !              + S31*S31 + S32*S32 + S33*S33 )
-      !
-      !     =   2.0*( S11*S11 + S22*S22 + S33*S33 )
-      !       + 4.0*( S12*S12 + S13*S13 + S23*S23 )
-      do j=0,nj+1
-      do i=0,ni+1
-        tmp13 = 0.5*( s13tlm(i,j,k)**2 + s13tlm(i+1,j,k)**2 )
-        tmp23 = 0.5*( s23tlm(i,j,k)**2 + s23tlm(i,j+1,k)**2 )
-        def = 4.0*(tmp13 + tmp23)
-!!!        nut_tlm(i,j,k) =  ((karman*(zftlm(k) + znt(i,j)))**2)*sqrt(max(1.0e-10,def))
-        nut_tlm(i,j,k) =  ((karman*zftlm(k))**2)*sqrt(max(1.0e-10,def))
-      enddo
-      enddo
-
-      print *,'  k:',k,wtlm(1,1,k),s13tlm(1,1,k),s23tlm(1,1,k),nut_tlm(1,1,k)
-
-! Derive t13 and t23 in TLM = nut*dudz and nut*dvdz, Aaron Wang, 7/3/2019
-!    t_ij  =  2 * K * S_ij
-!        so, t13 = 2.0 * K * s13
-!            t23 = 2.0 * K * s23
-
-      if( k.eq.1 )then
-        do j=1,nj+1
-        do i=1,ni+1
-        ! yo 1 !
-          t13tlm(i,j,1) = 0.5*( (ust(i-1,j)**2)*(u1(i-1,j)/max(s1(i-1,j),0.01))    &
-                               +(ust(i  ,j)**2)*(u1(i  ,j)/max(s1(i  ,j),0.01)) )
-          t23tlm(i,j,1) = 0.5*( (ust(i,j-1)**2)*(v1(i,j-1)/max(s1(i,j-1),0.01))    &
-                               +(ust(i,j  )**2)*(v1(i,j  )/max(s1(i,j  ),0.01)) )
-        enddo
-        enddo
-      else
-        do j=1,nj+1
-        do i=1,ni+1
-          t13tlm(i,j,k) = 2.0*0.5*(nut_tlm(i-1,j,k)+nut_tlm(i,j,k))*s13tlm(i,j,k)
-          t23tlm(i,j,k) = 2.0*0.5*(nut_tlm(i,j-1,k)+nut_tlm(i,j,k))*s23tlm(i,j,k)
-        enddo
-        enddo
-      endif
-    enddo
-
-
-!! The dealing of boundary follow the original ways of t13 and t23, Aaron Wang, 7/3/2019
-!! (Maybe not needed)
-!              !-----
-!              ! lateral boundary conditions:
-!              if(wbc.eq.3.and.ibw.eq.1)then
-!                ! free slip b.c.
-!                do j=1,nj
-!                  t13tlm(1,j,k) = t13tlm(2,j,k)
-!                enddo
-!              endif
-!              if(ebc.eq.3.and.ibe.eq.1)then
-!                ! free slip b.c.
-!                do j=1,nj
-!                  t13tlm(ni+1,j,k) = t13tlm(ni,j,k)
-!                enddo
-!              endif
-!              !-----
-!              !-----
-!              if(sbc.eq.3.and.ibs.eq.1)then
-!                ! free slip b.c.
-!                do i=1,ni
-!                  t23tlm(i,1,k) = t23tlm(i,2,k)
-!                enddo
-!              endif
-!              if(nbc.eq.3.and.ibn.eq.1)then
-!                ! free slip b.c.
-!                do i=1,ni
-!                  t23tlm(i,nj+1,k) = t23tlm(i,nj,k)
-!                enddo
-!              endif
-!              !-----
-!      ENDIF
-!    enddo
-
-
-! Top BC, Aaron Wang, 7/3/2019
-!  190722: get nut_tlm first, then set top bc
-    do j = jb,je
-    do i = ib,ie+1
-      utlm(i,j,nktlm) = ua(i,j,1)
-    enddo
-    enddo
-    do j = jb,je+1
-    do i = ib,ie
-      vtlm(i,j,nktlm) = va(i,j,1)
-    enddo
-    enddo
-
- !----------------------------------------------------------
-
-  ! GHB, 190909:  only integrate TLM if dosolve = .true.
-  ifdosolve:  &
-  IF( dosolve )THEN
-
-      tlmsolver  =  2   ! 1 = explicit time integration 
-                        !     (with small time steps to maintain stability)
-                        ! 2 = implicit time integration 
-                        !     (absolutely stable)
-
-    ! GHB: find stable timestep, number of iterations necessary for stability:
-
-    crmax = 0.0
-
-    print *,'  k,zf,nut,stab:'
-    do k=1,nktlm+1
-      print *,k,zftlm(k),nut_tlm(1,1,k),nut_tlm(1,1,k)*dt/(dztlm**2)
-      crmax = max( crmax , nut_tlm(1,1,k)*dt/(dztlm**2) )
-    enddo
-
-    niter = max( 1 , int(10.0*crmax+1.0) )
-
-    dttmp = dt/float(niter)
-
-    print *,'  crmax,niter,dt,dttmp = ',crmax,niter,dt,dttmp
-
-    print *,'  k,zf,nut,stab2:'
-    do k=1,nktlm+1
-      print *,k,zftlm(k),nut_tlm(1,1,k),nut_tlm(1,1,k)*dttmp/(dztlm**2)
-      crmax = max( crmax , nut_tlm(1,1,k)*dt/(dztlm**2) )
-    enddo
-
-
-  tlmsolvetype:  &
-  IF( tlmsolver.eq.1 )THEN
-
-    ! explicit time integration:
-
-    nloop:  &
-    DO n = 1 , niter
-
-
-    call bcu(utlm,nktlm)
-    call bcv(vtlm,nktlm)
-
-      do j = 0,nj+1
-      do i = 0,ni+1
-        wtlm(i,j,1) = 0.0
-      enddo
-      enddo
-
-      do k = 2,nktlm+1
-        do j = 0,nj+1
-        do i = 0,ni+1
-          wtlm(i,j,k) =((utlm(i+1,j,k-1) - utlm(i,j,k-1))*rdx  &
-                       +(vtlm(i,j+1,k-1) - vtlm(i,j,k-1))*rdy) &
-                       *(-dztlm) + wtlm(i,j,k-1)
-        enddo
-        enddo
-      enddo
-
-        if( imove.eq.1 )then
-          do j=0,nj+2
-          do i=0,ni+2
-            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) ) + umove
-            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) ) + vmove
-            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
-          enddo
-          enddo
-        else
-          do j=0,nj+2
-          do i=0,ni+2
-            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) )
-            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) )
-            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
-          enddo
-          enddo
-        endif
-        ! tlmcecd:
-        call getcecd(u1,v1,s1,z1,u10,v10,s10,xland,znt,ust,cd,ch,cq,ubar,vbar,sbar,.false.)
-        call bc2d(ust)
-        call bc2d(u1)
-        call bc2d(v1)
-        call bc2d(s1)
-        call bc2d(znt)
-
-      ! update t13 and t23:
-! Derive t13 and t23 in TLM = nut*dudz and nut*dvdz, Aaron Wang, 7/3/2019
-!    t_ij  =  2 * K * S_ij
-!        so, t13 = 2.0 * K * s13
-!            t23 = 2.0 * K * s23
-        do j=1,nj+1
-        do i=1,ni+1
-          !  Note:  1/(0.5*dz) = 2.0 * (1.0/dz)  = 2.0*rdz
-!!!          s13tlm(i,j,k) = 0.5*utlm(i,j,1)*2.0*rdztlm
-!!!          s23tlm(i,j,k) = 0.5*vtlm(i,j,1)*2.0*rdztlm
-!!!          t13tlm(i,j,k) = 2.0*0.5*(nut_tlm(i-1,j,k)+nut_tlm(i,j,k))*s13tlm(i,j,k)
-!!!          t23tlm(i,j,k) = 2.0*0.5*(nut_tlm(i,j-1,k)+nut_tlm(i,j,k))*s23tlm(i,j,k)
-        ! yo 1 !
-          t13tlm(i,j,1) = 0.5*( (ust(i-1,j)**2)*(u1(i-1,j)/max(s1(i-1,j),0.01))    &
-                               +(ust(i  ,j)**2)*(u1(i  ,j)/max(s1(i  ,j),0.01)) )
-          t23tlm(i,j,1) = 0.5*( (ust(i,j-1)**2)*(v1(i,j-1)/max(s1(i,j-1),0.01))    &
-                               +(ust(i,j  )**2)*(v1(i,j  )/max(s1(i,j  ),0.01)) )
-        enddo
-        enddo
-
-      do k=2,nktlm+1
-        do j=1,nj+1
-        do i=1,ni+1
-          s13tlm(i,j,k) = 0.5*(utlm(i,j,k)-utlm(i,j,k-1))*rdztlm
-          s23tlm(i,j,k) = 0.5*(vtlm(i,j,k)-vtlm(i,j,k-1))*rdztlm
-          t13tlm(i,j,k) = 2.0*0.5*(nut_tlm(i-1,j,k)+nut_tlm(i,j,k))*s13tlm(i,j,k)
-          t23tlm(i,j,k) = 2.0*0.5*(nut_tlm(i,j-1,k)+nut_tlm(i,j,k))*s23tlm(i,j,k)
-        tmp13 = 0.5*( s13tlm(i,j,k)**2 + s13tlm(i+1,j,k)**2 )
-        tmp23 = 0.5*( s23tlm(i,j,k)**2 + s23tlm(i,j+1,k)**2 )
-        def = 4.0*(tmp13 + tmp23)
-!!!        nut_tlm(i,j,k) =  ((karman*(zftlm(k) + znt(i,j)))**2)*sqrt(max(1.0e-10,def))
-        nut_tlm(i,j,k) =  ((karman*zftlm(k))**2)*sqrt(max(1.0e-10,def))
-        enddo
-        enddo
-      enddo
-
-    do k=1,nktlm-1
-      do j=1,nj+1
-      do i=1,ni+1
-
-!        utentlm = - 0.25*(  ( utlm(i,j,k+1) + utlm(i,j,k)     )   &   ! adv. term
-!                           *( wtlm(i,j,k+1) + wtlm(i-1,j,k+1) )   &
-!                          - ( utlm(i,j,k)   + utlm(i,j,k-1)   )   &
-!                           *( wtlm(i,j,k)   + wtlm(i-1,j,k)   ) ) &
-!                        *rdztlm                                   &
-!                  - tem2*(ppdtlm(i,j)-ppdtlm(i-1,j))*uf(i)          &    ! PGF term
-!                        *(thvtlm(i,j)+thvtlm(i-1,j))                &
-!                  + ( t13tlm(i,j,k+1) - t13tlm(i,j,k) )*rdztlm         ! stress term
-!
-!        vtentlm = - 0.25*(  ( vtlm(i,j,k+1) + vtlm(i,j,k)     )   &   ! adv. term
-!                           *( wtlm(i,j,k+1) + wtlm(i,j-1,k+1) )   &
-!                          - ( vtlm(i,j,k)   + vtlm(i,j,k-1)   )   &
-!                           *( wtlm(i,j,k)   + wtlm(i,j-1,k)   ) ) &
-!                        *rdztlm                                   &
-!                  - tem3*(ppdtlm(i,j)-ppdtlm(i,j-1))*vf(j)          &    ! PGF term
-!                        *(thvtlm(i,j)+thvtlm(i,j-1))                &   
-!                  + ( t23tlm(i,j,k+1) - t23tlm(i,j,k) )*rdztlm         ! stress term
-
-        ! GHB, 190707:  ignore adv and pgrad terms, for now:
-        utentlm = ( t13tlm(i,j,k+1) - t13tlm(i,j,k) )*rdztlm         ! stress term
-        vtentlm = ( t23tlm(i,j,k+1) - t23tlm(i,j,k) )*rdztlm         ! stress term
-
-        ! GHB, 190707:  ignore adv and pgrad terms, for now:
-!        utentlm = - 0.25*(  ( utlm(i,j,k+1) + utlm(i,j,k)     )   &   ! adv. term
-!                           *( wtlm(i,j,k+1) + wtlm(i-1,j,k+1) )   &
-!                          - ( utlm(i,j,k)   + utlm(i,j,k-1)   )   &
-!                           *( wtlm(i,j,k)   + wtlm(i-1,j,k)   ) ) &
-!                        *rdztlm                                   &
-!                  + ( t13tlm(i,j,k+1) - t13tlm(i,j,k) )*rdztlm         ! stress term
-!
-!        vtentlm = - 0.25*(  ( vtlm(i,j,k+1) + vtlm(i,j,k)     )   &   ! adv. term
-!                           *( wtlm(i,j,k+1) + wtlm(i,j-1,k+1) )   &
-!                          - ( vtlm(i,j,k)   + vtlm(i,j,k-1)   )   &
-!                           *( wtlm(i,j,k)   + wtlm(i,j-1,k)   ) ) &
-!                        *rdztlm                                   &
-!                  + ( t23tlm(i,j,k+1) - t23tlm(i,j,k) )*rdztlm         ! stress term
-
-        utlm(i,j,k) = utlm(i,j,k) + utentlm*dttmp
-        vtlm(i,j,k) = vtlm(i,j,k) + vtentlm*dttmp
-      enddo
-      enddo
-    enddo
-
-    ENDDO  nloop
-
-  !---------------------------------------------
-  !  190708: implicit vertical turbulence tendency
-
-  ELSEIF( tlmsolver.eq.2 )THEN  tlmsolvetype
-
-!!!    print *
-!!!    print *,'  implicit solver is not working yet '
-!!!    print *
-!!!    stop 12222
-
-    ! implicit time integration:
-
-
-    ! 190721:  alpha = 1 only
-    !   ("Euler backward" in time)
-
-    tema = -0.5*dt*1.0*rdztlm*rdztlm
-    temb =  0.5*dt*0.0*rdztlm*rdztlm
-    temc =  dt*rdztlm
-
-    k = 1
-    do j=1,nj+1
-    do i=1,ni+1
-      r1 = (nut_tlm(i-1,j,k  )+nut_tlm(i,j,k  ))
-      r2 = (nut_tlm(i-1,j,k+1)+nut_tlm(i,j,k+1))
-      cfc = tema*r2
-!!!      ! no slip lbc is included here:
-!!!      cfb = 1.0 - cfc - 2.0*tema*r1
-!!!      cfd = utlm(i,j,k)
-      cfb = 1.0 - cfc
-      cfd = utlm(i,j,k) - temc*t13tlm(i,j,1)
-      tem = 1.0/cfb
-      dum1u(i,j,k) = -cfc*tem
-      dum2u(i,j,k) =  cfd*tem
-      !---
-      r1 = (nut_tlm(i,j-1,k  )+nut_tlm(i,j,k  ))
-      r2 = (nut_tlm(i,j-1,k+1)+nut_tlm(i,j,k+1))
-      cfc = tema*r2
-      cfb = 1.0 - cfc
-      cfd = vtlm(i,j,k) - temc*t23tlm(i,j,1)
-      tem = 1.0/cfb
-      dum1v(i,j,k) = -cfc*tem
-      dum2v(i,j,k) =  cfd*tem
-    enddo
-    enddo
-
-    do k=2,(nktlm-1)
-    do j=1,nj+1
-    do i=1,ni+1
-      r1 = (nut_tlm(i-1,j,k  )+nut_tlm(i,j,k  ))
-      r2 = (nut_tlm(i-1,j,k+1)+nut_tlm(i,j,k+1))
-      cfa = tema*r1
-      cfc = tema*r2
-      cfb = 1.0 - cfa - cfc
-      cfd = utlm(i,j,k)
-      tem = 1.0/(cfa*dum1u(i,j,k-1)+cfb)
-      dum1u(i,j,k) = -cfc*tem
-      dum2u(i,j,k) = (cfd-cfa*dum2u(i,j,k-1))*tem
-      !---
-      r1 = (nut_tlm(i,j-1,k  )+nut_tlm(i,j,k  ))
-      r2 = (nut_tlm(i,j-1,k+1)+nut_tlm(i,j,k+1))
-      cfa = tema*r1
-      cfc = tema*r2
-      cfb = 1.0 - cfa - cfc
-      cfd = vtlm(i,j,k)
-      tem = 1.0/(cfa*dum1v(i,j,k-1)+cfb)
-      dum1v(i,j,k) = -cfc*tem
-      dum2v(i,j,k) = (cfd-cfa*dum2v(i,j,k-1))*tem
-    enddo
-    enddo
-    enddo
-
-    ! utlm(k=ktkm) is known, and is set above: utlm(k=ktlm) = ua(k=1) 
-
-    do k=(nktlm-1),1,-1
-    do j=1,nj+1
-    do i=1,ni+1
-      utlm(i,j,k) = dum1u(i,j,k)*utlm(i,j,k+1)+dum2u(i,j,k)
-      vtlm(i,j,k) = dum1v(i,j,k)*vtlm(i,j,k+1)+dum2v(i,j,k)
-    enddo
-    enddo
-    enddo
-
-  ENDIF  tlmsolvetype
-
-  !---------------------------------------------
-
-    call bcu(utlm,nktlm)
-    call bcv(vtlm,nktlm)
-!#ifdef MPI
-!      call       comm_1u_start(utlm,pw1,pw2,pe1,pe2,   &
-!                               ps1,ps2,pn1,pn2,reqs_p)
-!      call       comm_1u_end(utlm,pw1,pw2,pe1,pe2,   &
-!                                  ps1,ps2,pn1,pn2,reqs_p)
-!#endif
-
-    print *,'  new utlm,vtlm:'
-    do k=1,nktlm
-      print *,k,utlm(1,1,k),vtlm(1,1,k)
-    enddo
-
-  ENDIF  ifdosolve
-
-!!!    stop 1111
-
-! TAG: comm_3 utlm, vtlm ?
-
-  ENDIF
-
-
-!----------------------------------------------
-!----- End of TLM, Aaron wang, 7/3/2019 ------
-!----------------------------------------------
 !------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   ELSE
 
@@ -2742,38 +2218,32 @@
       IF(axisymm.eq.0)THEN
         ! Cartesian grid:
 
-
-
-
-
-
-
         avgsfc:  &
         IF( ( .not. use_avg_sfc ) .or. ( sfcmodel.ne.1 ) )THEN
 ! where to get t13, Aaron Wang, 7/3/2019
 
 
 
-!  IF( dotlm )THEN
-!          !$omp parallel do default(shared)   &
-!          !$omp private(i,j)
-!          do j=1,nj+1
-!          do i=1,ni+1
-!
-!            t13(i,j,1) = utlm(i,j,1)*rdztlm*(nut_tlm(i-1,j,1) + nut_tlm(i,j,1))  &
-!                                       *0.5*( rf(i-1,j,1)+rf(i,j,1) )
-!
-!            t23(i,j,1) = vtlm(i,j,1)*rdztlm*(nut_tlm(i,j-1,1) + nut_tlm(i,j,1))  &
-!                                       *0.5*( rf(i,j-1,1)+rf(i,j,1) )
-!
-!          ! KLUDGE !
-!!!!            t13(i,j,1) = t13(i,j,2)
-!!!!            t23(i,j,1) = t23(i,j,2)
-!          ! KLUDGE !
-!          enddo
-!          enddo
-!
-!  ELSE
+  IF( dotlm )THEN
+          !$omp parallel do default(shared)   &
+          !$omp private(i,j)
+          do j=1,nj+1
+          do i=1,ni+1
+
+            t13(i,j,1) = utlm(i,j,1)*2.0*rdztlm*(nut_tlm(i-1,j,1) + nut_tlm(i,j,1))  &
+                                       *0.5*( rf(i-1,j,1)+rf(i,j,1) )
+
+            t23(i,j,1) = vtlm(i,j,1)*2.0*rdztlm*(nut_tlm(i,j-1,1) + nut_tlm(i,j,1))  &
+                                       *0.5*( rf(i,j-1,1)+rf(i,j,1) )
+
+          ! KLUDGE !
+!!!            t13(i,j,1) = t13(i,j,2)
+!!!            t23(i,j,1) = t23(i,j,2)
+          ! KLUDGE !
+          enddo
+          enddo
+
+  ELSE
 
           !$omp parallel do default(shared)   &
           !$omp private(i,j)
@@ -2789,7 +2259,7 @@
           enddo
           enddo
 
-!  ENDIF
+  ENDIF
 
         ELSE  avgsfc
 
@@ -2924,26 +2394,6 @@
       end subroutine gettau
       ! gettau
 
-
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-      !dir$ attributes forceinline :: flx5
-      real function flx5(s1,s2,s3,s4,s5)
-      implicit none
-
-      real, intent(in) :: s1,s2,s3,s4,s5
-
-      ! 5th-order flux (eg, Wicker and Skamarock, 2002, MWR)
-
-      flx5 = (  (  2.0/60.0)*s1  &
-               +(-13.0/60.0)*s2  &
-               +( 47.0/60.0)*s3  &
-               +( 27.0/60.0)*s4  &
-               +( -3.0/60.0)*s5  )
-
-      end function flx5
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -5995,6 +5445,779 @@
  
       return
       end subroutine turbw
+
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+      !dir$ attributes forceinline :: flx5
+      real function flx5(s1,s2,s3,s4,s5)
+      implicit none
+
+      real, intent(in) :: s1,s2,s3,s4,s5
+
+      ! 5th-order flux (eg, Wicker and Skamarock, 2002, MWR)
+
+      flx5 = (  (  2.0/60.0)*s1  &
+               +(-13.0/60.0)*s2  &
+               +( 47.0/60.0)*s3  &
+               +( 27.0/60.0)*s4  &
+               +( -3.0/60.0)*s5  )
+
+      end function flx5
+
+!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+!CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+      ! 190731, GHB: make a separate subroutine for tlm code
+
+      subroutine tlmcode(xf,rxf,arf1,arf2,ust,u1,v1,s1,u10,v10,s10,xland,cd,ch,cq,rf,mf,dum1,dum2,  &
+                        dum3,dum4,dum5,dum6,dum7,dum8,uh,vh,                                      &
+                        kmh,kmv,t11,t12,t13,t22,t23,t33,ua,ugr,utmp,va,vgr,vtmp,ubar,vbar,sbar,use_avg_sfc, &
+                        dosolve,dt,utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm,zftlm,znt,uf,vf,upgtlm,vpgtlm, &  ! Aaron Wang, 7/3/2019
+                        reqs_u,reqs_v,reqs_w,reqs_s,reqs_p,        &
+                        uw31,uw32,ue31,ue32,us31,us32,un31,un32,   &
+                        vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32)
+      use input
+      use constants
+      use comm_module  ! Aaron Wang, 7/6/2019
+      use bc_module    ! Aaron Wang, 7/6/2019
+      use sfcphys_module, only : getcecd
+#ifdef MPI
+      use mpi
+#endif
+      implicit none
+      
+      real, intent(in), dimension(ib:ie+1) :: xf,rxf,arf1,arf2
+      real, intent(inout), dimension(ib:ie,jb:je) :: ust,u1,v1,s1,u10,v10,s10,cd,ch,cq
+      real, intent(in), dimension(ib:ie,jb:je) :: xland
+      real, intent(in), dimension(ib:ie,jb:je,kb:ke) :: rf
+      real, intent(in), dimension(ib:ie,jb:je,kb:ke+1) :: mf
+      real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: dum1,dum2,dum3,dum4,dum5,dum6,dum7,dum8
+      real, intent(in), dimension(ib:ie) :: uh
+      real, intent(in), dimension(jb:je) :: vh
+      real, intent(in), dimension(ibc:iec,jbc:jec,kbc:kec) :: kmh,kmv
+      real, intent(inout), dimension(ib:ie,jb:je,kb:ke) :: t11,t12,t13,t22,t23,t33
+      real, intent(in), dimension(ib:ie+1,jb:je,kb:ke) :: ua,ugr,utmp
+      real, intent(in), dimension(ib:ie,jb:je+1,kb:ke) :: va,vgr,vtmp
+      logical, intent(in) :: dosolve
+      real, intent(in) :: dt
+      real, intent(inout), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm  ! Aaron Wang, 7/3/2019
+      real, intent(inout), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm  ! Aaron Wang, 7/3/2019
+      real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm+1) :: wtlm
+      real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm) :: t13tlm,t23tlm,nut_tlm
+      real, intent(inout), dimension(ib:ie,jb:je) :: znt  ! Aaron Wang, 7/3/2019
+      real, intent(in), dimension(0:nktlm+1) :: zftlm  ! Aaron Wang, 7/3/2019
+      real, intent(in), dimension(ib:ie+1) :: uf       ! Aaron Wang, 7/4/2019
+      real, intent(in), dimension(jb:je+1) :: vf       ! Aaron Wang, 7/4/2019
+      real, intent(inout), dimension(ib:ie,jb:je) :: upgtlm,vpgtlm  ! Aaron Wang, 7/4/2019
+      double precision, intent(inout) :: ubar,vbar,sbar
+      logical, intent(in) :: use_avg_sfc
+
+      real, intent(inout), dimension(cmp,jmp,kmp)   :: uw31,uw32,ue31,ue32
+      real, intent(inout), dimension(imp+1,cmp,kmp) :: us31,us32,un31,un32
+      real, intent(inout), dimension(cmp,jmp+1,kmp) :: vw31,vw32,ve31,ve32
+      real, intent(inout), dimension(imp,cmp,kmp)   :: vs31,vs32,vn31,vn32
+      integer, intent(inout), dimension(rmp) :: reqs_u,reqs_v,reqs_w,reqs_s,reqs_p
+        
+      integer i,j,k,k1,n,niter,tlmsolver,tlm_bbc,i1,i2,j1,j2,nrk
+      real :: tem,crmax,dttmp,cfa,cfb,cfc,cfd,r1,r2,tema,temb,temc,rdt,wsp,cfl,dtdx,dtdy,dtdz
+      real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: s13tlm, s23tlm  ! Aaron Wang, 7/3/2019
+      real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: dum1u,dum2u,dum1v,dum2v
+      real, dimension(ib:ie,jb:je) :: z1
+      real :: tmp13,tmp23,def,utentlm, vtentlm  ! Aaron Wang, 7/3/2019
+      real :: tem2,tem3 ! add tem2 and tem3, Aaron Wang, 7/4/2019
+
+!----------------------------------------------------------------------
+!  Settings for TLM:
+
+      tlmsolver  =  2   ! 1 = explicit time integration for vertical diffusion
+                        !     (with small time steps to maintain stability)
+                        ! 2 = implicit time integration for vertical diffusion
+                        !     (absolutely stable)
+
+      tlm_bbc  =  3     ! bottom boundary condition for TLM:
+                        ! 2 = no slip
+                        ! 3 = semi-slip
+      
+
+!----------------------------------------------
+!----- Start of TLM, Aaron Wang, 7/3/2019 -----
+!----------------------------------------------
+
+
+  if( myid.eq.0 )then
+    print *,'  utlm,vtlm:'
+    do k=1,nktlm
+      print *,k,utlm(1,1,k),vtlm(1,1,k)
+    enddo
+  endif
+
+!!!    k1 = 0
+!!!    do while( znt(i,j).gt.0.5*(zftlm(k1)+zftlm(k1+1)) .and. k1.lt.nktlm )
+!!!      k1 = k1+1
+!!!    enddo
+
+!    if( k1.eq.0 )then
+!      stop 12443
+!    endif
+!    if( k1.eq.nktlm )then
+!      stop 12444
+!    endif
+
+    ! for tlm_bbc = 3, level used for reference wind speed
+    !   (190729: for now, just use wind from halfway up fine mesh)
+    k1 = nktlm/2
+
+    do j=0,nj+2
+    do i=0,ni+2
+      z1(i,j) = 0.5*(zftlm(k1)+zftlm(k1+1))
+    enddo
+    enddo
+
+  if( myid.eq.0 )then
+    print *,'  k1,znt,z1 = ',k1,znt(1,1),z1(1,1)
+
+    print *,'  dztlm,rdztlm,znt = ',dztlm,rdztlm,znt(1,1)
+
+    print *,'  k,wtlm,s13tlm,s23tlm,nut_tlm:'
+
+    print *,'  dudz_sfc, O1,O2:',(utlm(1,1,1)-0.0)/(0.5*dztlm)
+  endif
+
+  !----------------------------------------------
+  !  surface (k=1):
+
+    IF( tlm_bbc.eq.2 )THEN
+
+      ! no slip
+
+        do j=0,nj+2
+        do i=0,ni+2
+          !  Note:  1/(0.5*dz) = 2.0 * (1.0/dz)  = 2.0*rdz
+          ! no slip:
+          s13tlm(i,j,1) = 0.5*utlm(i,j,1)*2.0*rdztlm
+          s23tlm(i,j,1) = 0.5*vtlm(i,j,1)*2.0*rdztlm
+        enddo
+        enddo
+
+        k = 1
+
+        do j=0,nj+1
+        do i=0,ni+1
+          tmp13 = 0.5*( s13tlm(i,j,k)**2 + s13tlm(i+1,j,k)**2 )
+          tmp23 = 0.5*( s23tlm(i,j,k)**2 + s23tlm(i,j+1,k)**2 )
+          def = 4.0*(tmp13 + tmp23)
+          nut_tlm(i,j,k) =  ((karman*(zftlm(k) + znt(i,j)))**2)*sqrt(max(1.0e-10,def))
+        enddo
+        enddo
+
+        do j=1,nj+1
+        do i=1,ni+1
+          t13tlm(i,j,1) = 2.0*0.5*(nut_tlm(i-1,j,1)+nut_tlm(i,j,1))*s13tlm(i,j,1)
+          t23tlm(i,j,1) = 2.0*0.5*(nut_tlm(i,j-1,1)+nut_tlm(i,j,1))*s23tlm(i,j,1)
+        enddo
+        enddo
+
+    ELSEIF( tlm_bbc.eq.3 )THEN
+
+      ! semi slip:
+
+        if( imove.eq.1 )then
+          do j=0,nj+2
+          do i=0,ni+2
+            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) ) + umove
+            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) ) + vmove
+            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
+          enddo
+          enddo
+        else
+          do j=0,nj+2
+          do i=0,ni+2
+            u1(i,j) = 0.5*( utlm(i,j,k1) + utlm(i+1,j,k1) )
+            v1(i,j) = 0.5*( vtlm(i,j,k1) + vtlm(i,j+1,k1) )
+            s1(i,j) = sqrt(u1(i,j)**2+v1(i,j)**2)
+          enddo
+          enddo
+        endif
+
+        ! tlmcecd:
+        call getcecd(u1,v1,s1,z1,u10,v10,s10,xland,znt,ust,cd,ch,cq,ubar,vbar,sbar,.false.)
+
+    !-------------!
+    call bc2d(ust)
+#ifdef MPI
+    call comm_1s2d_start(ust,uw31(1,1,1),uw32(1,1,1),ue31(1,1,1),ue32(1,1,1),  &
+                             us31(1,1,1),us32(1,1,1),un31(1,1,1),un32(1,1,1),reqs_s)
+#endif
+    call bc2d(u1)
+#ifdef MPI
+    call comm_1s2d_start(u1 ,uw31(1,1,2),uw32(1,1,2),ue31(1,1,2),ue32(1,1,2),  &
+                             us31(1,1,2),us32(1,1,2),un31(1,1,2),un32(1,1,2),reqs_u)
+#endif
+    call bc2d(v1)
+#ifdef MPI
+    call comm_1s2d_start(v1 ,uw31(1,1,3),uw32(1,1,3),ue31(1,1,3),ue32(1,1,3),  &
+                             us31(1,1,3),us32(1,1,3),un31(1,1,3),un32(1,1,3),reqs_v)
+#endif
+    call bc2d(s1)
+#ifdef MPI
+    call comm_1s2d_start(s1 ,uw31(1,1,4),uw32(1,1,4),ue31(1,1,4),ue32(1,1,4),  &
+                             us31(1,1,4),us32(1,1,4),un31(1,1,4),un32(1,1,4),reqs_w)
+#endif
+    call bc2d(znt)
+#ifdef MPI
+    call comm_1s2d_start(znt,uw31(1,1,5),uw32(1,1,5),ue31(1,1,5),ue32(1,1,5),  &
+                             us31(1,1,5),us32(1,1,5),un31(1,1,5),un32(1,1,5),reqs_p)
+#endif
+    !-------------!
+
+#ifdef MPI
+    !-------------!
+    call comm_1s2d_end(ust,uw31(1,1,1),uw32(1,1,1),ue31(1,1,1),ue32(1,1,1),  &
+                           us31(1,1,1),us32(1,1,1),un31(1,1,1),un32(1,1,1),reqs_s)
+    call bcs2_2d(ust)
+
+    call comm_1s2d_end(u1 ,uw31(1,1,2),uw32(1,1,2),ue31(1,1,2),ue32(1,1,2),  &
+                           us31(1,1,2),us32(1,1,2),un31(1,1,2),un32(1,1,2),reqs_u)
+    call bcs2_2d(u1 )
+
+    call comm_1s2d_end(v1 ,uw31(1,1,3),uw32(1,1,3),ue31(1,1,3),ue32(1,1,3),  &
+                           us31(1,1,3),us32(1,1,3),un31(1,1,3),un32(1,1,3),reqs_v)
+    call bcs2_2d(v1 )
+
+    call comm_1s2d_end(s1 ,uw31(1,1,4),uw32(1,1,4),ue31(1,1,4),ue32(1,1,4),  &
+                           us31(1,1,4),us32(1,1,4),un31(1,1,4),un32(1,1,4),reqs_w)
+    call bcs2_2d(s1 )
+
+    call comm_1s2d_end(znt,uw31(1,1,5),uw32(1,1,5),ue31(1,1,5),ue32(1,1,5),  &
+                           us31(1,1,5),us32(1,1,5),un31(1,1,5),un32(1,1,5),reqs_p)
+    call bcs2_2d(znt)
+    !-------------!
+
+    !-------------!
+    call comm_2d_corner(ust)
+    call comm_2d_corner(u1)
+    call comm_2d_corner(v1)
+    call comm_2d_corner(s1)
+    call comm_2d_corner(znt)
+    !-------------!
+#endif
+
+        if( myid.eq.0 ) print *,'  z1,s1,s10,ust = ',z1(1,1),s1(1,1),s10(1,1),ust(1,1)
+
+        do j=0,nj+2
+        do i=0,ni+2
+          ! semi slip:
+          s13tlm(i,j,1) = 0.5*0.5*(ust(i-1,j)+ust(i,j))/(karman*znt(i,j))
+          s23tlm(i,j,1) = 0.5*0.5*(ust(i,j-1)+ust(i,j))/(karman*znt(i,j))
+        enddo
+        enddo
+
+        k = 1
+
+        do j=1,nj
+        do i=1,ni
+          tmp13 = 0.5*( s13tlm(i,j,k)**2 + s13tlm(i+1,j,k)**2 )
+          tmp23 = 0.5*( s23tlm(i,j,k)**2 + s23tlm(i,j+1,k)**2 )
+          def = 4.0*(tmp13 + tmp23)
+          nut_tlm(i,j,k) =  ((karman*(zftlm(k) + znt(i,j)))**2)*sqrt(max(1.0e-10,def))
+        enddo
+        enddo
+
+    call bc2d(nut_tlm(ib,jb,1))
+#ifdef MPI
+    call comm_1s2d_start(nut_tlm(ib,jb,1),uw31(1,1,5),uw32(1,1,5),ue31(1,1,5),ue32(1,1,5),  &
+                                          us31(1,1,5),us32(1,1,5),un31(1,1,5),un32(1,1,5),reqs_p)
+    call comm_1s2d_end(nut_tlm(ib,jb,1),uw31(1,1,5),uw32(1,1,5),ue31(1,1,5),ue32(1,1,5),  &
+                                        us31(1,1,5),us32(1,1,5),un31(1,1,5),un32(1,1,5),reqs_p)
+    call bcs2_2d(nut_tlm(ib,jb,1))
+    call comm_2d_corner(nut_tlm(ib,jb,1))
+#endif
+
+        do j=1,nj+1
+        do i=1,ni+1
+          t13tlm(i,j,1) = 0.5*( (ust(i-1,j)**2)*(u1(i-1,j)/max(s1(i-1,j),0.01))    &
+                               +(ust(i  ,j)**2)*(u1(i  ,j)/max(s1(i  ,j),0.01)) )
+          t23tlm(i,j,1) = 0.5*( (ust(i,j-1)**2)*(v1(i,j-1)/max(s1(i,j-1),0.01))    &
+                               +(ust(i,j  )**2)*(v1(i,j  )/max(s1(i,j  ),0.01)) )
+        enddo
+        enddo
+
+
+    ELSE
+
+      print *,'  invalid option for tlm_bbc '
+      call stopcm1
+
+    ENDIF
+
+  !----------------------------------------------
+  !  above surface:
+
+! Derive s13tlm and s23tlm for nut_tlm and t13tlm and t23tlm, Aaron Wang, 7/3/2019
+! Ignore horizontal strain (/dx and /dy) now since it is << /dz.
+
+    do k=2,nktlm+1
+
+!    S_ij  =  0.5 * ( d(u_i)/d(x_j) + d(u_j)/d(x_i) )
+!        so, s13 = 0.5*( du/dz + dw/dx )   -->  0.5*(du/dz)
+!            s23 = 0.5*( dv/dz + dw/dy )   -->  0.5*(dv/dz)
+        do j=0,nj+2
+        do i=0,ni+2
+          s13tlm(i,j,k) = 0.5*(utlm(i,j,k)-utlm(i,j,k-1))*rdztlm
+          s23tlm(i,j,k) = 0.5*(vtlm(i,j,k)-vtlm(i,j,k-1))*rdztlm
+        enddo
+        enddo
+
+! Derive def then eddy viscosity (nut_tlm), Aaron Wang, 7/3/2019      
+      ! Def = 2.0 * S_ij * S_ij
+      !
+      !     = 2.0 * (  S11*S11 + S12*S12 + S13*S13 
+      !              + S21*S21 + S22*S22 + S23*S23 
+      !              + S31*S31 + S32*S32 + S33*S33 )
+      !
+      !     =   2.0*( S11*S11 + S22*S22 + S33*S33 )
+      !       + 4.0*( S12*S12 + S13*S13 + S23*S23 )
+      do j=0,nj+1
+      do i=0,ni+1
+        tmp13 = 0.5*( s13tlm(i,j,k)**2 + s13tlm(i+1,j,k)**2 )
+        tmp23 = 0.5*( s23tlm(i,j,k)**2 + s23tlm(i,j+1,k)**2 )
+        def = 4.0*(tmp13 + tmp23)
+        nut_tlm(i,j,k) =  ((karman*(zftlm(k) + znt(i,j)))**2)*sqrt(max(1.0e-10,def))
+      enddo
+      enddo
+
+      if( myid.eq.0 ) print *,'  k:',k,wtlm(1,1,k),s13tlm(1,1,k),s23tlm(1,1,k),nut_tlm(1,1,k)
+
+! Derive t13 and t23 in TLM = nut*dudz and nut*dvdz, Aaron Wang, 7/3/2019
+!    t_ij  =  2 * K * S_ij
+!        so, t13 = 2.0 * K * s13
+!            t23 = 2.0 * K * s23
+
+        do j=1,nj+1
+        do i=1,ni+1
+          t13tlm(i,j,k) = 2.0*0.5*(nut_tlm(i-1,j,k)+nut_tlm(i,j,k))*s13tlm(i,j,k)
+          t23tlm(i,j,k) = 2.0*0.5*(nut_tlm(i,j-1,k)+nut_tlm(i,j,k))*s23tlm(i,j,k)
+        enddo
+        enddo
+
+    enddo
+
+
+!! The dealing of boundary follow the original ways of t13 and t23, Aaron Wang, 7/3/2019
+!! (Maybe not needed)
+!              !-----
+!              ! lateral boundary conditions:
+!              if(wbc.eq.3.and.ibw.eq.1)then
+!                ! free slip b.c.
+!                do j=1,nj
+!                  t13tlm(1,j,k) = t13tlm(2,j,k)
+!                enddo
+!              endif
+!              if(ebc.eq.3.and.ibe.eq.1)then
+!                ! free slip b.c.
+!                do j=1,nj
+!                  t13tlm(ni+1,j,k) = t13tlm(ni,j,k)
+!                enddo
+!              endif
+!              !-----
+!              !-----
+!              if(sbc.eq.3.and.ibs.eq.1)then
+!                ! free slip b.c.
+!                do i=1,ni
+!                  t23tlm(i,1,k) = t23tlm(i,2,k)
+!                enddo
+!              endif
+!              if(nbc.eq.3.and.ibn.eq.1)then
+!                ! free slip b.c.
+!                do i=1,ni
+!                  t23tlm(i,nj+1,k) = t23tlm(i,nj,k)
+!                enddo
+!              endif
+!              !-----
+!      ENDIF
+!    enddo
+
+
+ !----------------------------------------------------------
+ !  Get diffusion tendencies:
+
+  ! GHB, 190909:  only integrate TLM if dosolve = .true.
+  ifdosolve:  &
+  IF( dosolve )THEN
+
+
+  tlmsolvetype:  &
+  IF( tlmsolver.eq.1 )THEN
+
+    ! explicit time integration:
+    !  (removed on 190731)
+
+    stop 12121
+
+  ELSEIF( tlmsolver.eq.2 )THEN  tlmsolvetype
+
+    ! implicit time integration:
+
+
+    ! 190721:  alpha = 1 only
+    !   ("Euler backward" in time)
+
+    rdt = 1.0/dt
+    tema = -0.5*dt*1.0*rdztlm*rdztlm
+    temb =  0.5*dt*0.0*rdztlm*rdztlm
+    temc =  dt*rdztlm
+
+  IF( tlm_bbc.eq.2 )THEN
+
+    ! no slip:
+
+    k = 1
+    do j=1,nj+1
+    do i=1,ni+1
+      r1 = (nut_tlm(i-1,j,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i-1,j,k+1)+nut_tlm(i,j,k+1))
+      cfc = tema*r2
+      ! no slip lbc is included here:
+      cfb = 1.0 - cfc - 2.0*tema*r1
+      cfd = utlm(i,j,k)
+      tem = 1.0/cfb
+      dum1u(i,j,k) = -cfc*tem
+      dum2u(i,j,k) =  cfd*tem
+      !---
+      r1 = (nut_tlm(i,j-1,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i,j-1,k+1)+nut_tlm(i,j,k+1))
+      cfc = tema*r2
+      ! no slip lbc is included here:
+      cfb = 1.0 - cfc - 2.0*tema*r1
+      cfd = vtlm(i,j,k)
+      tem = 1.0/cfb
+      dum1v(i,j,k) = -cfc*tem
+      dum2v(i,j,k) =  cfd*tem
+    enddo
+    enddo
+
+  ELSEIF( tlm_bbc.eq.3 )THEN
+
+    ! semi-slip:
+
+    k = 1
+    do j=1,nj+1
+    do i=1,ni+1
+      r1 = (nut_tlm(i-1,j,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i-1,j,k+1)+nut_tlm(i,j,k+1))
+      cfc = tema*r2
+      ! semi-slip lbc:
+      cfb = 1.0 - cfc
+      cfd = utlm(i,j,k) - temc*t13tlm(i,j,1)
+      tem = 1.0/cfb
+      dum1u(i,j,k) = -cfc*tem
+      dum2u(i,j,k) =  cfd*tem
+      !---
+      r1 = (nut_tlm(i,j-1,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i,j-1,k+1)+nut_tlm(i,j,k+1))
+      cfc = tema*r2
+      ! semi-slip lbc:
+      cfb = 1.0 - cfc
+      cfd = vtlm(i,j,k) - temc*t23tlm(i,j,1)
+      tem = 1.0/cfb
+      dum1v(i,j,k) = -cfc*tem
+      dum2v(i,j,k) =  cfd*tem
+    enddo
+    enddo
+
+  ENDIF
+
+    do k=2,(nktlm-1)
+    do j=1,nj+1
+    do i=1,ni+1
+      r1 = (nut_tlm(i-1,j,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i-1,j,k+1)+nut_tlm(i,j,k+1))
+      cfa = tema*r1
+      cfc = tema*r2
+      cfb = 1.0 - cfa - cfc
+      cfd = utlm(i,j,k)
+      tem = 1.0/(cfa*dum1u(i,j,k-1)+cfb)
+      dum1u(i,j,k) = -cfc*tem
+      dum2u(i,j,k) = (cfd-cfa*dum2u(i,j,k-1))*tem
+      !---
+      r1 = (nut_tlm(i,j-1,k  )+nut_tlm(i,j,k  ))
+      r2 = (nut_tlm(i,j-1,k+1)+nut_tlm(i,j,k+1))
+      cfa = tema*r1
+      cfc = tema*r2
+      cfb = 1.0 - cfa - cfc
+      cfd = vtlm(i,j,k)
+      tem = 1.0/(cfa*dum1v(i,j,k-1)+cfb)
+      dum1v(i,j,k) = -cfc*tem
+      dum2v(i,j,k) = (cfd-cfa*dum2v(i,j,k-1))*tem
+    enddo
+    enddo
+    enddo
+
+    do j=1,nj+1
+    do i=1,ni+1
+      ! new utlm,vtlm:
+      dum5(i,j,nktlm) = ua(i,j,1)
+      dum6(i,j,nktlm) = va(i,j,1)
+      ! while we are at it, store old utlm,vtlm:
+      dum3(i,j,nktlm) = utlm(i,j,nktlm)
+      dum4(i,j,nktlm) = vtlm(i,j,nktlm)
+    enddo
+    enddo
+
+    do k=(nktlm-1),1,-1
+    do j=1,nj+1
+    do i=1,ni+1
+      ! new utlm,vtlm:
+      dum5(i,j,k) = dum1u(i,j,k)*dum5(i,j,k+1)+dum2u(i,j,k)
+      dum6(i,j,k) = dum1v(i,j,k)*dum6(i,j,k+1)+dum2v(i,j,k)
+      ! tendencies for utlm,vtlm:
+      dum1(i,j,k) = (dum5(i,j,k)-utlm(i,j,k))*rdt
+      dum2(i,j,k) = (dum6(i,j,k)-vtlm(i,j,k))*rdt
+      ! while we are at it, store old utlm,vtlm:
+      dum3(i,j,k) = utlm(i,j,k)
+      dum4(i,j,k) = vtlm(i,j,k)
+    enddo
+    enddo
+    enddo
+
+  ENDIF  tlmsolvetype
+
+  !---------------------------------------------
+  !  Now integrate utlm,vtlm (include advection, pressure gradient, etc):
+
+      do j = 0,nj+1
+      do i = 0,ni+1
+        wtlm(i,j,1) = 0.0
+      enddo
+      enddo
+
+      ! kludge !
+!!!      upgtlm = 0.0
+!!!      vpgtlm = 0.0
+      ! kludge !
+
+    rdt = 1.0/dt
+
+  ! 190731, Runge-Kutta scheme is needed for stability:
+
+    nrkloop:  &
+    DO NRK=1,nrkmax
+
+      dttmp=dt/float(nrkmax+1-nrk)
+
+! TAG compute dumx_utlm, dumy_utlm, dumx_vtlm, dumy_vtlm
+! Need to check the domain (now this is the key, 7/14/2019)
+
+      if(ibw.eq.1)then
+        i1=2
+      else
+        i1=1
+      endif
+
+      if(ibe.eq.1)then
+        i2=ni+1-1
+      else
+        i2=ni+1
+      endif
+
+      if(ibs.eq.1)then
+        j1=2
+      else
+        j1=1
+      endif
+
+      if(ibn.eq.1)then
+        j2=nj+1-1
+      else
+        j2=nj+1
+      endif
+
+!!!print *, 'i1, i2, j1, j2 =', i1, i2, j1, j2
+
+    kloop:  &
+    DO k=1,(nktlm-1)
+
+    ! for utlm
+
+      do j=1,nj
+      !dir$ vector always
+      do i=(i1-1),i2   ! i=0,ni+1 for periodic BC
+        ubar = 0.5*(utlm(i,j,k)+utlm(i+1,j,k))
+        if(ubar.ge.0.0)then
+          dum5(i,j,k) = ubar*flx5(utlm(i-2,j,k),utlm(i-1,j,k),utlm(i  ,j,k),utlm(i+1,j,k),utlm(i+2,j,k))
+        else
+          dum5(i,j,k) = ubar*flx5(utlm(i+3,j,k),utlm(i+2,j,k),utlm(i+1,j,k),utlm(i  ,j,k),utlm(i-1,j,k))
+        endif
+      enddo
+      enddo
+      do j=1,nj+1
+      !dir$ vector always
+      do i=i1,i2    ! i=1,ni+1 for periodic BC
+        vbar = 0.5*(vtlm(i,j,k)+vtlm(i-1,j,k))
+        if(vbar.ge.0.0)then
+          dum6(i,j,k) = vbar*flx5(utlm(i,j-3,k),utlm(i,j-2,k),utlm(i,j-1,k),utlm(i,j  ,k),utlm(i,j+1,k))
+        else
+          dum6(i,j,k) = vbar*flx5(utlm(i,j+2,k),utlm(i,j+1,k),utlm(i,j  ,k),utlm(i,j-1,k),utlm(i,j-2,k))
+        endif
+      enddo
+      enddo
+
+    ! for vtlm
+
+      do j=j1,j2     ! j=1,nj+1 for periodic BC
+      !dir$ vector always
+      do i=1,ni+1
+        ubar = 0.5*(utlm(i,j,k)+utlm(i,j-1,k))
+        if(ubar.ge.0.0)then
+          dum7(i,j,k) = ubar*flx5(vtlm(i-3,j,k),vtlm(i-2,j,k),vtlm(i-1,j,k),vtlm(i  ,j,k),vtlm(i+1,j,k))
+        else
+          dum7(i,j,k) = ubar*flx5(vtlm(i+2,j,k),vtlm(i+1,j,k),vtlm(i  ,j,k),vtlm(i-1,j,k),vtlm(i-2,j,k))
+        endif
+      enddo
+      enddo
+      do j=(j1-1),j2    ! j=0,nj+1 for periodic BC
+      !dir$ vector always
+      do i=1,ni
+        vbar = 0.5*(vtlm(i,j,k)+vtlm(i,j+1,k))
+        if(vbar.ge.0.0)then
+          dum8(i,j,k) = vbar*flx5(vtlm(i,j-2,k),vtlm(i,j-1,k),vtlm(i,j  ,k),vtlm(i,j+1,k),vtlm(i,j+2,k))
+        else
+          dum8(i,j,k) = vbar*flx5(vtlm(i,j+3,k),vtlm(i,j+2,k),vtlm(i,j+1,k),vtlm(i,j  ,k),vtlm(i,j-1,k))
+        endif
+      enddo
+      enddo
+
+      do j=1,nj+1
+      do i=1,ni+1
+        utentlm =  -(dum5(i,j,k)-dum5(i-1,j,k))*rdx*uf(i)         &    ! h. adv. term
+                   -(dum6(i,j+1,k)-dum6(i,j,k))*rdy*vh(j)         &
+                   - 0.25*(  ( utlm(i,j,k+1) + utlm(i,j,k)     )   &   ! v. adv. term
+                            *( wtlm(i,j,k+1) + wtlm(i-1,j,k+1) )   &
+                           - ( utlm(i,j,k)   + utlm(i,j,k-1)   )   &
+                            *( wtlm(i,j,k)   + wtlm(i-1,j,k)   ) )*rdztlm
+        ! kludge !
+!!!        utentlm = 0.0
+        ! kludge !
+        utlm(i,j,k) = dum3(i,j,k) + dttmp*( utentlm + dum1(i,j,k) + upgtlm(i,j) )
+
+        vtentlm = -(dum7(i+1,j,k)-dum7(i,j,k))*rdx*uh(i)         &    ! h. adv. term
+                  -(dum8(i,j,k)-dum8(i,j-1,k))*rdy*vf(j)         &
+                  - 0.25*(  ( vtlm(i,j,k+1) + vtlm(i,j,k)     )   &   ! adv. term
+                           *( wtlm(i,j,k+1) + wtlm(i,j-1,k+1) )   &
+                          - ( vtlm(i,j,k)   + vtlm(i,j,k-1)   )   &
+                           *( wtlm(i,j,k)   + wtlm(i,j-1,k)   ) )*rdztlm
+        ! kludge !
+!!!        vtentlm = 0.0
+        ! kludge !
+        vtlm(i,j,k) = dum4(i,j,k) + dttmp*( vtentlm + dum2(i,j,k) + vpgtlm(i,j) )
+      enddo
+      enddo
+
+    ENDDO  kloop
+
+    do j = 1,nj+1
+    do i = 1,ni+1
+      utlm(i,j,nktlm) = dum3(i,j,nktlm) + dttmp*(ua(i,j,1)-dum3(i,j,nktlm))*rdt
+      vtlm(i,j,nktlm) = dum4(i,j,nktlm) + dttmp*(va(i,j,1)-dum4(i,j,nktlm))*rdt
+    enddo
+    enddo
+
+    call bcu(utlm,nktlm)
+    call bcv(vtlm,nktlm)
+#ifdef MPI
+    call comm_3u_start(utlm,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u,nktlm)
+    call comm_3u_end(  utlm,uw31,uw32,ue31,ue32,us31,us32,un31,un32,reqs_u,nktlm)
+    call comm_3v_start(vtlm,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v,nktlm)
+    call comm_3v_end(  vtlm,vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,reqs_v,nktlm)
+#endif
+
+    ! Derive wtlm by continuity eq., Aaron Wang, 7/3/2019
+    ! Need i-1 and j-1 grid for adv. term, so start from 0
+      do k = 2,nktlm+1
+      do j = 0,nj+1
+      do i = 0,ni+1
+        wtlm(i,j,k) =((utlm(i+1,j,k-1) - utlm(i,j,k-1))*rdx  &
+                     +(vtlm(i,j+1,k-1) - vtlm(i,j,k-1))*rdy) &
+                     *(-dztlm) + wtlm(i,j,k-1)
+      enddo
+      enddo
+      enddo
+
+    ENDDO  nrkloop
+
+
+      ! check CFL criterion:
+
+      dtdx=0.5*dt*rdx
+      dtdy=0.5*dt*rdy
+      dtdz=0.5*dt*rdztlm
+
+      cfl = -1.0
+
+      do k=1,nktlm
+        do j=1,nj
+        do i=1,ni
+          wsp = sqrt( ( ((utlm(i,j,k)+utlm(i+1,j,k))*dtdx*uh(i))**2     &
+                       +((vtlm(i,j,k)+vtlm(i,j+1,k))*dtdy*vh(j))**2 )   &
+                       +((wtlm(i,j,k)+wtlm(i,j,k+1))*dtdz)**2 )
+          if( wsp.gt.cfl )then
+            cfl = wsp
+          endif
+        enddo
+        enddo
+      enddo
+
+#ifdef MPI
+      call MPI_ALLREDUCE(MPI_IN_PLACE,cfl,1,MPI_REAL,MPI_MAX,MPI_COMM_WORLD,ierr)
+#endif
+
+      if( myid.eq.0 ) print *,'  tlm cfl max = ',cfl
+
+  if( myid.eq.0 )then
+    print *,'  new dum3,utlm,dum4,vtlm:'
+    do k=1,nktlm
+      print *,k,dum3(1,1,k),utlm(1,1,k),dum4(1,1,k),vtlm(1,1,k)
+    enddo
+  endif
+!!!  stop 121
+
+  ENDIF  ifdosolve
+
+!!!    stop 1111
+
+! TAG: comm_3 utlm, vtlm ?
+
+
+!----------------------------------------------
+!----- End of TLM, Aaron wang, 7/3/2019 ------
+!----------------------------------------------
+!------------------------------------
+
+  IF( axisymm.eq.1 )THEN
+
+    print *,'  cannot run TLM with axisymmetric grid '
+    call stopcm1
+
+  ENDIF
+  IF( terrain_flag )THEN
+
+    print *,'  cannot run TLM with terrain '
+    call stopcm1
+
+  ENDIF
+
+
+!--------------------------------------------------------------
+!  finished
+
+      if(timestats.ge.1) time_turb=time_turb+mytime()
+ 
+      return
+      end subroutine tlmcode
+
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

@@ -2241,16 +2241,17 @@
  
  
       subroutine comm_3u_start(u,west,newwest,east,neweast,   &
-                                 south,newsouth,north,newnorth,reqs)
+                                 south,newsouth,north,newnorth,reqs,nmax)
       use input
       use mpi
       implicit none
  
-      real u(ib:ie+1,jb:je,kb:ke)
-      real west(cmp,nj,nk),newwest(cmp,nj,nk)
-      real east(cmp,nj,nk),neweast(cmp,nj,nk)
-      real south(ni+1,cmp,nk),newsouth(ni+1,cmp,nk)
-      real north(ni+1,cmp,nk),newnorth(ni+1,cmp,nk)
+      integer, intent(in) :: nmax
+      real u(ib:ie+1,jb:je,1-ngz:nmax+ngz)
+      real west(cmp,nj,nmax),newwest(cmp,nj,nmax)
+      real east(cmp,nj,nmax),neweast(cmp,nj,nmax)
+      real south(ni+1,cmp,nmax),newsouth(ni+1,cmp,nmax)
+      real north(ni+1,cmp,nmax),newnorth(ni+1,cmp,nmax)
       integer reqs(8)
  
       integer i,j,k,nr
@@ -2266,7 +2267,7 @@
       ! receive east
       if(ibe.eq.0)then
         nr = nr + 1
-        call mpi_irecv(neweast,cs3we,MPI_REAL,myeast,tag1,   &
+        call mpi_irecv(neweast,cmp*nj*nmax,MPI_REAL,myeast,tag1,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2278,7 +2279,7 @@
       ! receive west
       if(ibw.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newwest,cs3we,MPI_REAL,mywest,tag2,   &
+        call mpi_irecv(newwest,cmp*nj*nmax,MPI_REAL,mywest,tag2,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2290,7 +2291,7 @@
       ! receive north
       if(ibn.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newnorth,cu3sn,MPI_REAL,mynorth,tag3,   &
+        call mpi_irecv(newnorth,cmp*(ni+1)*nmax,MPI_REAL,mynorth,tag3,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2302,7 +2303,7 @@
       ! receive south
       if(ibs.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newsouth,cu3sn,MPI_REAL,mysouth,tag4,   &
+        call mpi_irecv(newsouth,cmp*(ni+1)*nmax,MPI_REAL,mysouth,tag4,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
 
@@ -2316,7 +2317,7 @@
       if(ibw.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj
         do i=1,cmp
           west(i,j,k)=u(i+1,j,k)
@@ -2324,7 +2325,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(west,cs3we,MPI_REAL,mywest,tag1,   &
+        call mpi_isend(west,cmp*nj*nmax,MPI_REAL,mywest,tag1,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2334,7 +2335,7 @@
       if(ibe.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj
         do i=1,cmp
           east(i,j,k)=u(ni-cmp+i,j,k)
@@ -2342,7 +2343,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(east,cs3we,MPI_REAL,myeast,tag2,   &
+        call mpi_isend(east,cmp*nj*nmax,MPI_REAL,myeast,tag2,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
 
@@ -2352,7 +2353,7 @@
       if(ibs.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni+1
           south(i,j,k)=u(i,j,k)
@@ -2360,7 +2361,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(south,cu3sn,MPI_REAL,mysouth,tag3,   &
+        call mpi_isend(south,cmp*(ni+1)*nmax,MPI_REAL,mysouth,tag3,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2370,7 +2371,7 @@
       if(ibn.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni+1
           north(i,j,k)=u(i,nj-cmp+j,k)
@@ -2378,7 +2379,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(north,cu3sn,MPI_REAL,mynorth,tag4,   &
+        call mpi_isend(north,cmp*(ni+1)*nmax,MPI_REAL,mynorth,tag4,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2395,16 +2396,17 @@
  
  
       subroutine comm_3u_end(u,west,newwest,east,neweast,   &
-                               south,newsouth,north,newnorth,reqs)
+                               south,newsouth,north,newnorth,reqs,nmax)
       use input
       use mpi
       implicit none
  
-      real u(ib:ie+1,jb:je,kb:ke)
-      real west(cmp,nj,nk),newwest(cmp,nj,nk)
-      real east(cmp,nj,nk),neweast(cmp,nj,nk)
-      real south(ni+1,cmp,nk),newsouth(ni+1,cmp,nk)
-      real north(ni+1,cmp,nk),newnorth(ni+1,cmp,nk)
+      integer, intent(in) :: nmax
+      real u(ib:ie+1,jb:je,1-ngz:nmax+ngz)
+      real west(cmp,nj,nmax),newwest(cmp,nj,nmax)
+      real east(cmp,nj,nmax),neweast(cmp,nj,nmax)
+      real south(ni+1,cmp,nmax),newsouth(ni+1,cmp,nmax)
+      real north(ni+1,cmp,nmax),newnorth(ni+1,cmp,nmax)
       integer reqs(8)
  
       integer i,j,k,nn,nr,index
@@ -2443,7 +2445,7 @@
       if(index.eq.index_east)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj
         do i=1,cmp
           u(ni+1+i,j,k)=neweast(i,j,k)
@@ -2453,7 +2455,7 @@
       elseif(index.eq.index_west)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj
         do i=1,cmp
           u(i-cmp,j,k)=newwest(i,j,k)
@@ -2463,7 +2465,7 @@
       elseif(index.eq.index_north)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni+1
           u(i,nj+j,k)=newnorth(i,j,k)
@@ -2473,7 +2475,7 @@
       elseif(index.eq.index_south)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni+1
           u(i,j-cmp,k)=newsouth(i,j,k)
@@ -2496,7 +2498,7 @@
           if(p2tchsww)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(0,0,k)=u(1,0,k)
             enddo
           endif
@@ -2504,7 +2506,7 @@
           if(p2tchnww)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(0,nj+1,k)=u(1,nj+1,k)
             enddo
           endif
@@ -2516,7 +2518,7 @@
           if(p2tchsee)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(ni+2,0,k)=u(ni+1,0,k)
             enddo
           endif
@@ -2524,7 +2526,7 @@
           if(p2tchnee)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(ni+2,nj+1,k)=u(ni+1,nj+1,k)
             enddo
           endif
@@ -2540,7 +2542,7 @@
           if(p2tchsws)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(0,0,k)=u(0,1,k)
             enddo
           endif
@@ -2548,7 +2550,7 @@
           if(p2tchses)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(ni+2,0,k)=u(ni+2,1,k)
             enddo
           endif
@@ -2560,7 +2562,7 @@
           if(p2tchnwn)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(0,nj+1,k)=u(0,nj,k)
             enddo
           endif
@@ -2568,7 +2570,7 @@
           if(p2tchnen)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               u(ni+2,nj+1,k)=u(ni+2,nj,k)
             enddo
           endif
@@ -2613,16 +2615,17 @@
  
  
       subroutine comm_3v_start(v,west,newwest,east,neweast,   &
-                                 south,newsouth,north,newnorth,reqs)
+                                 south,newsouth,north,newnorth,reqs,nmax)
       use input
       use mpi
       implicit none
  
-      real v(ib:ie,jb:je+1,kb:ke)
-      real west(cmp,nj+1,nk),newwest(cmp,nj+1,nk)
-      real east(cmp,nj+1,nk),neweast(cmp,nj+1,nk)
-      real south(ni,cmp,nk),newsouth(ni,cmp,nk)
-      real north(ni,cmp,nk),newnorth(ni,cmp,nk)
+      integer, intent(in) :: nmax
+      real v(ib:ie,jb:je+1,1-ngz:nmax+ngz)
+      real west(cmp,nj+1,nmax),newwest(cmp,nj+1,nmax)
+      real east(cmp,nj+1,nmax),neweast(cmp,nj+1,nmax)
+      real south(ni,cmp,nmax),newsouth(ni,cmp,nmax)
+      real north(ni,cmp,nmax),newnorth(ni,cmp,nmax)
       integer reqs(8)
  
       integer i,j,k,nr
@@ -2638,7 +2641,7 @@
       ! receive east
       if(ibe.eq.0)then
         nr = nr + 1
-        call mpi_irecv(neweast,cv3we,MPI_REAL,myeast,tag1,   &
+        call mpi_irecv(neweast,cmp*(nj+1)*nmax,MPI_REAL,myeast,tag1,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2650,7 +2653,7 @@
       ! receive west
       if(ibw.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newwest,cv3we,MPI_REAL,mywest,tag2,   &
+        call mpi_irecv(newwest,cmp*(nj+1)*nmax,MPI_REAL,mywest,tag2,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2662,7 +2665,7 @@
       ! receive north
       if(ibn.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newnorth,cs3sn,MPI_REAL,mynorth,tag3,   &
+        call mpi_irecv(newnorth,ni*cmp*nmax,MPI_REAL,mynorth,tag3,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2674,7 +2677,7 @@
       ! receive south
       if(ibs.eq.0)then
         nr = nr + 1
-        call mpi_irecv(newsouth,cs3sn,MPI_REAL,mysouth,tag4,   &
+        call mpi_irecv(newsouth,ni*cmp*nmax,MPI_REAL,mysouth,tag4,   &
                       MPI_COMM_WORLD,reqs(nr),ierr)
       endif
 
@@ -2688,7 +2691,7 @@
       if(ibw.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj+1
         do i=1,cmp
           west(i,j,k)=v(i,j,k)
@@ -2696,7 +2699,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(west,cv3we,MPI_REAL,mywest,tag1,   &
+        call mpi_isend(west,cmp*(nj+1)*nmax,MPI_REAL,mywest,tag1,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2705,7 +2708,7 @@
       if(ibe.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj+1
         do i=1,cmp
           east(i,j,k)=v(ni-cmp+i,j,k)
@@ -2713,7 +2716,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(east,cv3we,MPI_REAL,myeast,tag2,   &
+        call mpi_isend(east,cmp*(nj+1)*nmax,MPI_REAL,myeast,tag2,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
 
@@ -2723,7 +2726,7 @@
       if(ibs.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni
           south(i,j,k)=v(i,j+1,k)
@@ -2731,7 +2734,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(south,cs3sn,MPI_REAL,mysouth,tag3,   &
+        call mpi_isend(south,ni*cmp*nmax,MPI_REAL,mysouth,tag3,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2741,7 +2744,7 @@
       if(ibn.eq.0)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni
           north(i,j,k)=v(i,nj-cmp+j,k)
@@ -2749,7 +2752,7 @@
         enddo
         enddo
         nr = nr + 1
-        call mpi_isend(north,cs3sn,MPI_REAL,mynorth,tag4,   &
+        call mpi_isend(north,ni*cmp*nmax,MPI_REAL,mynorth,tag4,   &
                        MPI_COMM_WORLD,reqs(nr),ierr)
       endif
  
@@ -2765,16 +2768,17 @@
  
  
       subroutine comm_3v_end(v,west,newwest,east,neweast,   &
-                               south,newsouth,north,newnorth,reqs)
+                               south,newsouth,north,newnorth,reqs,nmax)
       use input
       use mpi
       implicit none
  
-      real v(ib:ie,jb:je+1,kb:ke)
-      real west(cmp,nj+1,nk),newwest(cmp,nj+1,nk)
-      real east(cmp,nj+1,nk),neweast(cmp,nj+1,nk)
-      real south(ni,cmp,nk),newsouth(ni,cmp,nk)
-      real north(ni,cmp,nk),newnorth(ni,cmp,nk)
+      integer, intent(in) :: nmax
+      real v(ib:ie,jb:je+1,1-ngz:nmax+ngz)
+      real west(cmp,nj+1,nmax),newwest(cmp,nj+1,nmax)
+      real east(cmp,nj+1,nmax),neweast(cmp,nj+1,nmax)
+      real south(ni,cmp,nmax),newsouth(ni,cmp,nmax)
+      real north(ni,cmp,nmax),newnorth(ni,cmp,nmax)
       integer reqs(8)
  
       integer i,j,k,nn,nr,index
@@ -2813,7 +2817,7 @@
       if(index.eq.index_east)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj+1
         do i=1,cmp
           v(ni+i,j,k)=neweast(i,j,k)
@@ -2823,7 +2827,7 @@
       elseif(index.eq.index_west)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,nj+1
         do i=1,cmp
           v(i-cmp,j,k)=newwest(i,j,k)
@@ -2833,7 +2837,7 @@
       elseif(index.eq.index_north)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni
           v(i,nj+1+j,k)=newnorth(i,j,k)
@@ -2843,7 +2847,7 @@
       elseif(index.eq.index_south)then
 !$omp parallel do default(shared)   &
 !$omp private(i,j,k)
-        do k=1,nk
+        do k=1,nmax
         do j=1,cmp
         do i=1,ni
           v(i,j-cmp,k)=newsouth(i,j,k)
@@ -2866,7 +2870,7 @@
           if(p2tchsww)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(0,0,k)=v(1,0,k)
             enddo
           endif
@@ -2874,7 +2878,7 @@
           if(p2tchnww)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(0,nj+2,k)=v(1,nj+2,k)
             enddo
           endif
@@ -2886,7 +2890,7 @@
           if(p2tchsee)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(ni+1,0,k)=v(ni,0,k)
             enddo
           endif
@@ -2894,7 +2898,7 @@
           if(p2tchnee)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(ni+1,nj+2,k)=v(ni,nj+2,k)
             enddo
           endif
@@ -2910,7 +2914,7 @@
           if(p2tchsws)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(0,0,k)=v(0,1,k)
             enddo
           endif
@@ -2918,7 +2922,7 @@
           if(p2tchses)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(ni+1,0,k)=v(ni+1,1,k)
             enddo
           endif
@@ -2930,7 +2934,7 @@
           if(p2tchnwn)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(0,nj+2,k)=v(0,nj+1,k)
             enddo
           endif
@@ -2938,7 +2942,7 @@
           if(p2tchnen)then
 !$omp parallel do default(shared)   &
 !$omp private(k)
-            do k=1,nk
+            do k=1,nmax
               v(ni+1,nj+2,k)=v(ni+1,nj+1,k)
             enddo
           endif

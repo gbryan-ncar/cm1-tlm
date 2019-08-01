@@ -114,15 +114,15 @@
     do i=i1,i2
       znt(i,j) = max(1.0e-12,cnst_znt)
       rznt = 1.0/znt(i,j)
-!!!      cd(i,j) = ( karman/alog((10.0+znt(i,j))*rznt) )**2
-      cd(i,j) = ( karman/alog((10.0)*rznt) )**2
-!!!      var = alog((10.0+znt(i,j))*rznt)/alog((za(i,j)+znt(i,j))*rznt)
-      var = alog((10.0)*rznt)/alog((za(i,j))*rznt)
+      cd(i,j) = ( karman/alog((10.0+znt(i,j))*rznt) )**2
+!!!      cd(i,j) = ( karman/alog((10.0)*rznt) )**2
+      var = alog((10.0+znt(i,j))*rznt)/alog((za(i,j)+znt(i,j))*rznt)
+!!!      var = alog((10.0)*rznt)/alog((za(i,j))*rznt)
       u10(i,j) = u1(i,j)*var
       v10(i,j) = v1(i,j)*var
       s10(i,j) = s1(i,j)*var
-!!!      ust(i,j) = max( s1(i,j)*karman/alog((za(i,j)+znt(i,j))*rznt) , 1.0e-6 )
-      ust(i,j) = max( s1(i,j)*karman/alog((za(i,j))*rznt) , 1.0e-6 )
+      ust(i,j) = max( s1(i,j)*karman/alog((za(i,j)+znt(i,j))*rznt) , 1.0e-6 )
+!!!      ust(i,j) = max( s1(i,j)*karman/alog((za(i,j))*rznt) , 1.0e-6 )
     enddo
     enddo
 

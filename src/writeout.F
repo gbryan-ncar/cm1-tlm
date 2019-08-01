@@ -1855,6 +1855,11 @@
       unit_output(n_out) = 'm^2/s^2'                         ! PMM
       grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts   ! PMM
       n_out = n_out + 1
+      name_output(n_out) = 'wtlm    '
+      desc_output(n_out) = 'wtlm                                '
+      unit_output(n_out) = 'm/s'
+      grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
+      n_out = n_out + 1
       name_output(n_out) = 't13tlm  '
       desc_output(n_out) = 't13tlm                              '
       unit_output(n_out) = 'm^2/s^2'
@@ -2135,7 +2140,7 @@
                         dat1,dat2,dat3,reqt,dum2d          ,                                   &
                         tdiag,qdiag,udiag,vdiag,wdiag,pdiag,out2d,out3d,                       &
                         nw1,nw2,ne1,ne2,sw1,sw2,se1,se2,                                       &
-                        utlm,vtlm,t13tlm,t23tlm,nut_tlm)  ! Aaron Wang, 7/5/2019
+                        utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm)  ! Aaron Wang, 7/5/2019
                         ! end_writeout
       use input
       use constants
@@ -2242,6 +2247,7 @@
       real, intent(inout), dimension(kmt) :: nw1,nw2,ne1,ne2,sw1,sw2,se1,se2
       real, intent(inout), dimension(ib:ie+1,jb:je,kbtlm:ketlm) :: utlm  ! Aaron Wang, 7/3/2019
       real, intent(inout), dimension(ib:ie,jb:je+1,kbtlm:ketlm) :: vtlm  ! Aaron Wang, 7/3/2019
+      real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm+1) :: wtlm
       real, intent(inout), dimension(ib:ie,jb:je,kbtlm:ketlm) :: t13tlm,t23tlm,nut_tlm
 
       integer :: i,j,k,n,nn,nmax,im,ip
@@ -5620,6 +5626,20 @@
           enddo                                   ! PMM
           enddo                                   ! PMM
           enddo                                   ! PMM
+
+        elseif( trim(name_output(n)).eq.'wtlm' )then
+
+          dumw = 0.0
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,min(nktlm+1,maxk)
+          do j=1,nj
+          do i=1,ni
+            dumw(i,j,k) = wtlm(i,j,k)
+          enddo
+          enddo
+          enddo
 
         elseif( trim(name_output(n)).eq.'t13tlm' )then
 

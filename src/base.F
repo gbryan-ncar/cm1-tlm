@@ -2455,9 +2455,9 @@
       !--------
 #ifdef MPI
       call comm_3u_start(u0,uw31,uw32,ue31,ue32,   &
-                            us31,us32,un31,un32,reqs_u)
+                            us31,us32,un31,un32,reqs_u,nk)
       call comm_3u_end(u0,uw31,uw32,ue31,ue32,   &
-                          us31,us32,un31,un32,reqs_u)
+                          us31,us32,un31,un32,reqs_u,nk)
       call getcorneru3(u0,n3w1(1,1,1),n3w2(1,1,1),n3e1(1,1,1),n3e2(1,1,1),  &
                           s3w1(1,1,1),s3w2(1,1,1),s3e1(1,1,1),s3e2(1,1,1))
       call bcu2(u0)
@@ -2473,9 +2473,9 @@
       !--------
 #ifdef MPI
       call comm_3v_start(v0,vw31,vw32,ve31,ve32,   &
-                            vs31,vs32,vn31,vn32,reqs_v)
+                            vs31,vs32,vn31,vn32,reqs_v,nk)
       call comm_3v_end(v0,vw31,vw32,ve31,ve32,   &
-                          vs31,vs32,vn31,vn32,reqs_v)
+                          vs31,vs32,vn31,vn32,reqs_v,nk)
       call getcornerv3(v0,n3w1(1,1,1),n3w2(1,1,1),n3e1(1,1,1),n3e2(1,1,1),  &
                           s3w1(1,1,1),s3w2(1,1,1),s3e1(1,1,1),s3e2(1,1,1))
       call bcv2(v0)

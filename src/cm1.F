@@ -100,7 +100,7 @@
       real, dimension(:,:,:), allocatable :: rrv,va,v3d,vten,vten1
       real, dimension(:,:,:), allocatable :: rrw,wa,w3d,wten,wten1
 
-      real, dimension(:,:,:), allocatable :: utlm,vtlm,t13tlm,t23tlm,nut_tlm ! Aaron Wang, 7/2/2019
+      real, dimension(:,:,:), allocatable :: utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm ! Aaron Wang, 7/2/2019
       real, dimension(:), allocatable :: zftlm ! Aaron Wang, 7/5/2019
       real, dimension(:,:), allocatable :: upgtlm,vpgtlm ! Aaron Wang, 7/5/2019; GHB 190707: get p-grad directly
 
@@ -1013,7 +1013,7 @@
 
 ! parameters set by Aaron Wang, 7/2/2019
 ! GHB:  moved this here (after zh,zf are defined), 190707
-      nktlm = 20
+      nktlm = 10
 !!!      dztlm = dz/nktlm
 !!!      dztlm = (zf(1,1,2)-zf(1,1,1))/nktlm
       dztlm = zh(1,1,1)/(float(nktlm)-0.5)
@@ -1135,6 +1135,8 @@
       vtlm = 0.0
       vtlm = v0(1,1,1)
 
+      allocate(  wtlm(ib:ie,jb:je,kbtlm:ketlm+1) )
+      wtlm = 0.0
       allocate( t13tlm(ib:ie,jb:je,kbtlm:ketlm) )
       t13tlm = 0.0
       allocate( t23tlm(ib:ie,jb:je,kbtlm:ketlm) )
@@ -2180,7 +2182,7 @@
                    dum1,dum2,dum3,dum4,dum5,dum6,dum7,dum8,          &
                    divx,rho,rr,rf,prs,                               &
                    t11,t12,t13,t22,t23,t33,                          &
-                   u0,u3d,uten,v0,v3d,vten,w3d,wten,                 &
+                   u0,u3d,uten,uten1,v0,v3d,vten,vten1,w3d,wten,     &
                    pp3d,ppten,                                       &
                    th3d,thten,thten1,q3d,                            &
                    kmh,kmv,khh,khv,tkea,tke3d,                       &
@@ -2203,9 +2205,10 @@
                    pw1,pw2,pe1,pe2,ps1,ps2,pn1,pn2,                  &
                    vw1,vw2,ve1,ve2,vs1,vs2,vn1,vn2,                  &
                    uw31,uw32,ue31,ue32,us31,us32,un31,un32,          &
+                   vw31,vw32,ve31,ve32,vs31,vs32,vn31,vn32,          &
                    kw1,kw2,ke1,ke2,ks1,ks2,kn1,kn2,                  &
                    flag  ,out2d,out3d,rtime,update_sfc,dosolve,      &
-                   utlm,vtlm,t13tlm,t23tlm,nut_tlm,zftlm,upgtlm,vpgtlm)  ! Aaron Wang, 7/5/2019
+                   utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm,zftlm,upgtlm,vpgtlm)  ! Aaron Wang, 7/5/2019
         ! end_sfc_and_turb
 
 
@@ -2375,7 +2378,7 @@
                         dat1,dat2,dat3,reqt,thten1(ib,jb,1),                                   &
                         tdiag,qdiag,udiag,vdiag,wdiag,pdiag,out2d,out3d,                       &
                         nw1,nw2,ne1,ne2,sw1,sw2,se1,se2,                                       &
-                        utlm,vtlm,t13tlm,t23tlm,nut_tlm)  ! Aaron Wang, 7/5/2019
+                        utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm)  ! Aaron Wang, 7/5/2019
                         ! end_writeout
           if(n.eq.1)then
             srec = frec
@@ -2481,7 +2484,7 @@
                    tdiag,qdiag,udiag,vdiag,wdiag,kdiag,out2d,out3d,            &
                    getdbz,getvt,                                               &
                    sw31,sw32,se31,se32,ss31,ss32,sn31,sn32,flag,               &
-                   utlm,vtlm,t13tlm,t23tlm,nut_tlm)
+                   utlm,vtlm,wtlm,t13tlm,t23tlm,nut_tlm)
         ! end turbdiag
         nwritet = nwritet+1
         if(turbfrq.gt.0.0)then

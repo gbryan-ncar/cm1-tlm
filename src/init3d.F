@@ -1991,14 +1991,14 @@
       nw=0
 
       call comm_3u_start(ua,uw31,uw32,ue31,ue32,   &
-                            us31,us32,un31,un32,reqs_u)
+                            us31,us32,un31,un32,reqs_u,nk)
       call comm_3u_end(ua,uw31,uw32,ue31,ue32,   &
-                          us31,us32,un31,un32,reqs_u)
+                          us31,us32,un31,un32,reqs_u,nk)
 
       call comm_3v_start(va,vw31,vw32,ve31,ve32,   &
-                            vs31,vs32,vn31,vn32,reqs_v)
+                            vs31,vs32,vn31,vn32,reqs_v,nk)
       call comm_3v_end(va,vw31,vw32,ve31,ve32,   &
-                          vs31,vs32,vn31,vn32,reqs_v)
+                          vs31,vs32,vn31,vn32,reqs_v,nk)
 
       call comm_3w_start(wa,ww31,ww32,we31,we32,   &
                             ws31,ws32,wn31,wn32,reqs_w)
@@ -2299,7 +2299,7 @@
         utlm(i,j,k)=ua(i,j,1)*real(k)/real(nktlm)
       enddo
       enddo
-print *, 'Aaron TAG, k, utlm(k) = ', k, utlm(2,2,k)
+      if( myid.eq.0 ) print *, 'Aaron TAG, k, utlm(k) = ', k, utlm(2,2,k)
       do j=jb,je+1
       do i=ib,ie
         vtlm(i,j,k)=va(i,j,1)*real(k)/real(nktlm)
