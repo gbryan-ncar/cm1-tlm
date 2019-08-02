@@ -2224,7 +2224,10 @@
 
 
 
-  IF( dotlm )THEN
+  IF( dotlm .and. tlm_bbc.eq.2 )THEN
+
+      ! no-slip bbc for tlm:
+
           !$omp parallel do default(shared)   &
           !$omp private(i,j)
           do j=1,nj+1
@@ -2244,6 +2247,8 @@
           enddo
 
   ELSE
+
+      ! semi-slip bbc:
 
           !$omp parallel do default(shared)   &
           !$omp private(i,j)
@@ -5521,8 +5526,8 @@
       real, intent(inout), dimension(imp,cmp,kmp)   :: vs31,vs32,vn31,vn32
       integer, intent(inout), dimension(rmp) :: reqs_u,reqs_v,reqs_w,reqs_s,reqs_p
         
-      integer i,j,k,k1,n,niter,tlmsolver,tlm_bbc,i1,i2,j1,j2,nrk
-      real :: tem,crmax,dttmp,cfa,cfb,cfc,cfd,r1,r2,tema,temb,temc,rdt,wsp,cfl,dtdx,dtdy,dtdz
+      integer i,j,k,k1,n,niter,tlmsolver,i1,i2,j1,j2,nrk
+      real :: tem,crmax,dttmp,dtadv,time,cfa,cfb,cfc,cfd,r1,r2,tema,temb,temc,rdt,wsp,cfl,dtdx,dtdy,dtdz
       real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: s13tlm, s23tlm  ! Aaron Wang, 7/3/2019
       real, dimension(ib:ie,jb:je,kbtlm:ketlm) :: dum1u,dum2u,dum1v,dum2v
       real, dimension(ib:ie,jb:je) :: z1
@@ -5568,6 +5573,8 @@
 
     ! for tlm_bbc = 3, level used for reference wind speed
     !   (190729: for now, just use wind from halfway up fine mesh)
+    ! This is needed because dztlm can actually be smaller than 
+    ! roughness length!
     k1 = nktlm/2
 
     do j=0,nj+2
@@ -5959,8 +5966,8 @@
     do j=1,nj+1
     do i=1,ni+1
       ! new utlm,vtlm:
-      dum5(i,j,nktlm) = ua(i,j,1)
-      dum6(i,j,nktlm) = va(i,j,1)
+      dum5(i,j,nktlm) = ua(i,j,kcm1tlm)
+      dum6(i,j,nktlm) = va(i,j,kcm1tlm)
       ! while we are at it, store old utlm,vtlm:
       dum3(i,j,nktlm) = utlm(i,j,nktlm)
       dum4(i,j,nktlm) = vtlm(i,j,nktlm)
@@ -5999,14 +6006,42 @@
 !!!      vpgtlm = 0.0
       ! kludge !
 
-    rdt = 1.0/dt
+  ! sub-looping needed, since wtlm can get too large for CFL criterion:
 
-  ! 190731, Runge-Kutta scheme is needed for stability:
+
+    ! GHB: find stable timestep, and number of iterations necessary for stability:
+
+    crmax = 0.0
+
+    do k=2,nktlm+1
+    do j=1,nj
+    do i=1,ni
+      crmax = max( crmax , wtlm(i,j,k)*dt*rdztlm )
+    enddo
+    enddo
+    enddo
+
+#ifdef MPI
+    call MPI_ALLREDUCE(MPI_IN_PLACE,crmax,1,MPI_REAL,MPI_MAX,MPI_COMM_WORLD,ierr)
+#endif
+
+    niter = max( 1 , int(crmax+1.0) )
+    dtadv = dt/float(niter)
+    rdt = 1.0/dtadv
+
+    if( myid.eq.0 ) print *,'  crmax,niter,dtadv,dt = ',crmax,niter,dtadv,dt
+
+  nadvloop:  &
+  DO n = 1 , niter
+
+    ! 190731, Runge-Kutta scheme is needed for stability:
 
     nrkloop:  &
     DO NRK=1,nrkmax
 
-      dttmp=dt/float(nrkmax+1-nrk)
+      dttmp=dtadv/float(nrkmax+1-nrk)
+      time = (n-1)*dtadv + dttmp
+      if( myid.eq.0 ) print *,'    niter,nrk,dttmp,time = ',niter,nrk,dttmp,time
 
 ! TAG compute dumx_utlm, dumy_utlm, dumx_vtlm, dumy_vtlm
 ! Need to check the domain (now this is the key, 7/14/2019)
@@ -6120,8 +6155,8 @@
 
     do j = 1,nj+1
     do i = 1,ni+1
-      utlm(i,j,nktlm) = dum3(i,j,nktlm) + dttmp*(ua(i,j,1)-dum3(i,j,nktlm))*rdt
-      vtlm(i,j,nktlm) = dum4(i,j,nktlm) + dttmp*(va(i,j,1)-dum4(i,j,nktlm))*rdt
+      utlm(i,j,nktlm) = dum3(i,j,nktlm) + dttmp*(ua(i,j,kcm1tlm)-dum3(i,j,nktlm))*rdt
+      vtlm(i,j,nktlm) = dum4(i,j,nktlm) + dttmp*(va(i,j,kcm1tlm)-dum4(i,j,nktlm))*rdt
     enddo
     enddo
 
@@ -6148,6 +6183,7 @@
 
     ENDDO  nrkloop
 
+  ENDDO  nadvloop
 
       ! check CFL criterion:
 

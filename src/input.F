@@ -139,7 +139,7 @@
               ud_hidiff,ud_vidiff,ud_hediff,ud_vediff,                        &
               vd_hidiff,vd_vidiff,vd_hediff,vd_vediff,                        &
               wd_hidiff,wd_vidiff,wd_hediff,wd_vediff,                        &
-              iusekm,iusekh,nktlm,kbtlm,ketlm   ! Aaron Wang, 7/3/2019
+              iusekm,iusekh,nktlm,kbtlm,ketlm,tlm_bbc,kcm1tlm   ! Aaron Wang, 7/3/2019
 
 !-----------------------------------------------------------------------
 
