@@ -2239,10 +2239,6 @@
             t23(i,j,1) = vtlm(i,j,1)*2.0*rdztlm*(nut_tlm(i,j-1,1) + nut_tlm(i,j,1))  &
                                        *0.5*( rf(i,j-1,1)+rf(i,j,1) )
 
-          ! KLUDGE !
-!!!            t13(i,j,1) = t13(i,j,2)
-!!!            t23(i,j,1) = t23(i,j,2)
-          ! KLUDGE !
           enddo
           enddo
 
@@ -5537,10 +5533,10 @@
 !----------------------------------------------------------------------
 !  Settings for TLM:
 
-      tlmsolver  =  2   ! 1 = explicit time integration for vertical diffusion
-                        !     (with small time steps to maintain stability)
+      tlmsolver  =  2   !
                         ! 2 = implicit time integration for vertical diffusion
                         !     (absolutely stable)
+                        !     (this is the only option, right now)
 
       tlm_bbc  =  3     ! bottom boundary condition for TLM:
                         ! 2 = no slip
@@ -5552,12 +5548,12 @@
 !----------------------------------------------
 
 
-  if( myid.eq.0 )then
-    print *,'  utlm,vtlm:'
-    do k=1,nktlm
-      print *,k,utlm(1,1,k),vtlm(1,1,k)
-    enddo
-  endif
+!!!  if( myid.eq.0 )then
+!!!    print *,'  utlm,vtlm:'
+!!!    do k=1,nktlm
+!!!      print *,k,utlm(1,1,k),vtlm(1,1,k)
+!!!    enddo
+!!!  endif
 
 !!!    k1 = 0
 !!!    do while( znt(i,j).gt.0.5*(zftlm(k1)+zftlm(k1+1)) .and. k1.lt.nktlm )
@@ -5582,16 +5578,6 @@
       z1(i,j) = 0.5*(zftlm(k1)+zftlm(k1+1))
     enddo
     enddo
-
-  if( myid.eq.0 )then
-    print *,'  k1,znt,z1 = ',k1,znt(1,1),z1(1,1)
-
-    print *,'  dztlm,rdztlm,znt = ',dztlm,rdztlm,znt(1,1)
-
-    print *,'  k,wtlm,s13tlm,s23tlm,nut_tlm:'
-
-    print *,'  dudz_sfc, O1,O2:',(utlm(1,1,1)-0.0)/(0.5*dztlm)
-  endif
 
   !----------------------------------------------
   !  surface (k=1):
@@ -5712,7 +5698,7 @@
     !-------------!
 #endif
 
-        if( myid.eq.0 ) print *,'  z1,s1,s10,ust = ',z1(1,1),s1(1,1),s10(1,1),ust(1,1)
+!!!        if( myid.eq.0 ) print *,'  z1,s1,s10,ust = ',z1(1,1),s1(1,1),s10(1,1),ust(1,1)
 
         do j=0,nj+2
         do i=0,ni+2
@@ -5796,7 +5782,7 @@
       enddo
       enddo
 
-      if( myid.eq.0 ) print *,'  k:',k,wtlm(1,1,k),s13tlm(1,1,k),s23tlm(1,1,k),nut_tlm(1,1,k)
+!!!      if( myid.eq.0 ) print *,'  k:',k,wtlm(1,1,k),s13tlm(1,1,k),s23tlm(1,1,k),nut_tlm(1,1,k)
 
 ! Derive t13 and t23 in TLM = nut*dudz and nut*dvdz, Aaron Wang, 7/3/2019
 !    t_ij  =  2 * K * S_ij
@@ -6001,14 +5987,7 @@
       enddo
       enddo
 
-      ! kludge !
-!!!      upgtlm = 0.0
-!!!      vpgtlm = 0.0
-      ! kludge !
-
-  ! sub-looping needed, since wtlm can get too large for CFL criterion:
-
-
+    ! sub-looping needed, since wtlm can get too large for CFL criterion:
     ! GHB: find stable timestep, and number of iterations necessary for stability:
 
     crmax = 0.0
@@ -6133,9 +6112,6 @@
                             *( wtlm(i,j,k+1) + wtlm(i-1,j,k+1) )   &
                            - ( utlm(i,j,k)   + utlm(i,j,k-1)   )   &
                             *( wtlm(i,j,k)   + wtlm(i-1,j,k)   ) )*rdztlm
-        ! kludge !
-!!!        utentlm = 0.0
-        ! kludge !
         utlm(i,j,k) = dum3(i,j,k) + dttmp*( utentlm + dum1(i,j,k) + upgtlm(i,j) )
 
         vtentlm = -(dum7(i+1,j,k)-dum7(i,j,k))*rdx*uh(i)         &    ! h. adv. term
@@ -6144,9 +6120,6 @@
                            *( wtlm(i,j,k+1) + wtlm(i,j-1,k+1) )   &
                           - ( vtlm(i,j,k)   + vtlm(i,j,k-1)   )   &
                            *( wtlm(i,j,k)   + wtlm(i,j-1,k)   ) )*rdztlm
-        ! kludge !
-!!!        vtentlm = 0.0
-        ! kludge !
         vtlm(i,j,k) = dum4(i,j,k) + dttmp*( vtentlm + dum2(i,j,k) + vpgtlm(i,j) )
       enddo
       enddo
@@ -6212,12 +6185,12 @@
 
       if( myid.eq.0 ) print *,'  tlm cfl max = ',cfl
 
-  if( myid.eq.0 )then
-    print *,'  new dum3,utlm,dum4,vtlm:'
-    do k=1,nktlm
-      print *,k,dum3(1,1,k),utlm(1,1,k),dum4(1,1,k),vtlm(1,1,k)
-    enddo
-  endif
+!  if( myid.eq.0 )then
+!    print *,'  new dum3,utlm,dum4,vtlm:'
+!    do k=1,nktlm
+!      print *,k,dum3(1,1,k),utlm(1,1,k),dum4(1,1,k),vtlm(1,1,k)
+!    enddo
+!  endif
 !!!  stop 121
 
   ENDIF  ifdosolve

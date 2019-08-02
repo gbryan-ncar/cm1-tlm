@@ -7,7 +7,7 @@
 
   CONTAINS
 
-      subroutine write_restart(nstep,srec,sirec,urec,vrec,wrec,nrec,prec,           &
+      subroutine write_restart(nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec, &
                                trecs,trecw,arecs,arecw,                             &
                                nwrite,nwritet,nwritea,nrst,num_soil_layers,nrad2d,  &
                                dt,dtlast,mtime,ndt,adt,acfl,dbldt,mass1,            &
@@ -48,7 +48,7 @@
       ! This subroutine organizes the writing of restart files
       !----------------------------------------------------------
 
-      integer, intent(in) :: nstep,srec,sirec,urec,vrec,wrec,nrec,prec,trecs,trecw,arecs,arecw
+      integer, intent(in) :: nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec,trecs,trecw,arecs,arecw
       integer, intent(in) :: nwrite,nwritet,nwritea,nrst
       integer, intent(in) :: num_soil_layers,nrad2d
       real, intent(in) :: dt,dtlast
@@ -287,6 +287,9 @@
       write(50) urec
       write(50) vrec
       write(50) wrec
+      write(50) xrec
+      write(50) yrec
+      write(50) zrec
       write(50) nrec
       write(50) prec
       write(50) trecs
@@ -338,6 +341,15 @@
 
       call disp_err( nf90_inq_varid(ncid,"wrec",varid) , .true. )
       call disp_err( nf90_put_var(ncid,varid,wrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"xrec",varid) , .true. )
+      call disp_err( nf90_put_var(ncid,varid,xrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"yrec",varid) , .true. )
+      call disp_err( nf90_put_var(ncid,varid,yrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"zrec",varid) , .true. )
+      call disp_err( nf90_put_var(ncid,varid,zrec,(/time_index/)) , .true. )
 
       call disp_err( nf90_inq_varid(ncid,"nrec",varid) , .true. )
       call disp_err( nf90_put_var(ncid,varid,nrec,(/time_index/)) , .true. )
@@ -1492,7 +1504,7 @@
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-      subroutine read_restart(nstep,srec,sirec,urec,vrec,wrec,nrec,prec,           &
+      subroutine read_restart(nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec, &
                               trecs,trecw,arecs,arecw,                             &
                               nwrite,nwritet,nwritea,nrst,num_soil_layers,nrad2d,  &
                               dt,dtlast,mtime,ndt,adt,acfl,dbldt,mass1,            &
@@ -1533,7 +1545,7 @@
       ! This subroutine organizes the reading of restart files
       !----------------------------------------------------------
 
-      integer, intent(inout) :: nstep,srec,sirec,urec,vrec,wrec,nrec,prec,trecs,trecw,arecs,arecw
+      integer, intent(inout) :: nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec,trecs,trecw,arecs,arecw
       integer, intent(inout) :: nwrite,nwritet,nwritea,nrst
       integer, intent(in) :: num_soil_layers,nrad2d
       real, intent(inout) :: dt,dtlast
@@ -1787,6 +1799,9 @@
       read(50) urec
       read(50) vrec
       read(50) wrec
+      read(50) xrec
+      read(50) yrec
+      read(50) zrec
       read(50) nrec
       read(50) prec
       read(50) trecs
@@ -1838,6 +1853,15 @@
 
       call disp_err( nf90_inq_varid(ncid,"wrec",varid) , .true. )
       call disp_err( nf90_get_var(ncid,varid,wrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"xrec",varid) , .true. )
+      call disp_err( nf90_get_var(ncid,varid,xrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"yrec",varid) , .true. )
+      call disp_err( nf90_get_var(ncid,varid,yrec,(/time_index/)) , .true. )
+
+      call disp_err( nf90_inq_varid(ncid,"zrec",varid) , .true. )
+      call disp_err( nf90_get_var(ncid,varid,zrec,(/time_index/)) , .true. )
 
       call disp_err( nf90_inq_varid(ncid,"nrec",varid) , .true. )
       call disp_err( nf90_get_var(ncid,varid,nrec,(/time_index/)) , .true. )
@@ -1938,6 +1962,9 @@
       call MPI_BCAST(urec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(vrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(wrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(xrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(yrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(zrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(nrec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(prec   ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(trecs  ,1,MPI_INTEGER         ,0,MPI_COMM_WORLD,ierr)
@@ -2955,6 +2982,9 @@
       if(dowr) write(outfile,*) '   urec    = ',urec
       if(dowr) write(outfile,*) '   vrec    = ',vrec
       if(dowr) write(outfile,*) '   wrec    = ',wrec
+      if(dowr) write(outfile,*) '   xrec    = ',xrec
+      if(dowr) write(outfile,*) '   yrec    = ',yrec
+      if(dowr) write(outfile,*) '   zrec    = ',zrec
       if(dowr) write(outfile,*) '   nrec    = ',nrec
       if(dowr) write(outfile,*) '   prec    = ',prec
       if(dowr) write(outfile,*) '   nwrite  = ',nwrite
@@ -2984,6 +3014,9 @@
         urec = 1
         vrec = 1
         wrec = 1
+        xrec = 1
+        yrec = 1
+        zrec = 1
         nrec = 1
         nwrite = 1
         prec = 1

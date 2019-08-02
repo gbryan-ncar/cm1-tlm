@@ -111,7 +111,7 @@
               prcl_th,prcl_t,prcl_prs,prcl_ptra,prcl_q,prcl_nc,               &
               prcl_km,prcl_kh,prcl_tke,prcl_dbz,prcl_b,prcl_vpg,prcl_vort,    &
               prcl_rho,prcl_qsat,prcl_sfc,                                    &
-              n_out,s_out,u_out,v_out,w_out,z_out,sout2d,sout3d,              &
+              n_out,s_out,u_out,v_out,w_out,x_out,y_out,z_out,sout2d,sout3d,  &
               stat_w,stat_wlevs,stat_u,stat_v,stat_rmw,                       &
               stat_pipert,stat_prspert,stat_thpert,stat_q,                    &
               stat_tke,stat_km,stat_kh,stat_div,stat_rh,stat_rhi,stat_the,    &

@@ -1500,16 +1500,6 @@
       desc_output(n_out) = 'E-W (x) velocity (grid-relative)'
       unit_output(n_out) = 'm/s'
       grid_output(n_out) = 'u'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
-
-
-! Added by Aaron Wang, 7/5/2019
-      n_out = n_out + 1
-      name_output(n_out) = 'utlm    '
-      desc_output(n_out) = 'u in embedded TLM'
-      unit_output(n_out) = 'm/s'
-      grid_output(n_out) = 'u'
-! End of added by Aaron Wang, 7/5/2019
-
     endif
     if(output_upert.eq.1)then
       n_out = n_out + 1
@@ -1660,15 +1650,6 @@
       desc_output(n_out) = 'N-S (y) velocity (grid-relative)'
       unit_output(n_out) = 'm/s'
       grid_output(n_out) = 'v'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
-
-! Added by Aaron Wang, 7/5/2019
-      n_out = n_out + 1
-      name_output(n_out) = 'vtlm    '
-      desc_output(n_out) = 'v in embedded TLM'
-      unit_output(n_out) = 'm/s'
-      grid_output(n_out) = 'v'
-! End, Aaron Wang, 7/5/2019
-
     endif
     if(output_vpert.eq.1)then
       n_out = n_out + 1
@@ -1854,26 +1835,6 @@
       desc_output(n_out) = 'turb stress tau_13            '   ! PMM
       unit_output(n_out) = 'm^2/s^2'                         ! PMM
       grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts   ! PMM
-      n_out = n_out + 1
-      name_output(n_out) = 'wtlm    '
-      desc_output(n_out) = 'wtlm                                '
-      unit_output(n_out) = 'm/s'
-      grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
-      n_out = n_out + 1
-      name_output(n_out) = 't13tlm  '
-      desc_output(n_out) = 't13tlm                              '
-      unit_output(n_out) = 'm^2/s^2'
-      grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
-      n_out = n_out + 1
-      name_output(n_out) = 't23tlm  '
-      desc_output(n_out) = 't23tlm                              '
-      unit_output(n_out) = 'm^2/s^2'
-      grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
-      n_out = n_out + 1
-      name_output(n_out) = 'nut_tlm '
-      desc_output(n_out) = 'nut_tlm                             '
-      unit_output(n_out) = 'm^2/s'
-      grid_output(n_out) = 'w'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
     endif
     if(output_kh .eq.1)then
       n_out = n_out + 1
@@ -2067,6 +2028,53 @@
       ENDIF
 
 
+!----------------------------
+!  TLM variables:
+!    GHB: moved this here on 190801
+
+    IF( dotlm )THEN
+
+! Added by Aaron Wang, 7/5/2019
+      n_out = n_out + 1
+      name_output(n_out) = 'utlm    '
+      desc_output(n_out) = 'u in embedded TLM'
+      unit_output(n_out) = 'm/s'
+      grid_output(n_out) = 'x'
+! End of added by Aaron Wang, 7/5/2019
+
+! Added by Aaron Wang, 7/5/2019
+      n_out = n_out + 1
+      name_output(n_out) = 'vtlm    '
+      desc_output(n_out) = 'v in embedded TLM'
+      unit_output(n_out) = 'm/s'
+      grid_output(n_out) = 'y'
+! End, Aaron Wang, 7/5/2019
+
+      n_out = n_out + 1
+      name_output(n_out) = 'wtlm    '
+      desc_output(n_out) = 'wtlm                                '
+      unit_output(n_out) = 'm/s'
+      grid_output(n_out) = 'z'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
+      n_out = n_out + 1
+      name_output(n_out) = 't13tlm  '
+      desc_output(n_out) = 't13tlm                              '
+      unit_output(n_out) = 'm^2/s^2'
+      grid_output(n_out) = 'z'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
+      n_out = n_out + 1
+      name_output(n_out) = 't23tlm  '
+      desc_output(n_out) = 't23tlm                              '
+      unit_output(n_out) = 'm^2/s^2'
+      grid_output(n_out) = 'z'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
+      n_out = n_out + 1
+      name_output(n_out) = 'nut_tlm '
+      desc_output(n_out) = 'nut_tlm                             '
+      unit_output(n_out) = 'm^2/s'
+      grid_output(n_out) = 'z'     ! s=scalar pts (3d) ; u=u pts (3d) ; v=v pts (3d) ; w=w pts (3d) ; 2=2d scalar pts
+
+
+    ENDIF
+
+
 !-----------------------------------------------------------------------
 !  End:  define output variables:
 !-----------------------------------------------------------------------
@@ -2076,6 +2084,9 @@
       u_out = 0
       v_out = 0
       w_out = 0
+      x_out = 0
+      y_out = 0
+      z_out = 0
 
       do n=1,n_out
         if( grid_output(n).eq.'2' ) sout2d = sout2d+1
@@ -2083,6 +2094,9 @@
         if( grid_output(n).eq.'u' ) u_out = u_out+1
         if( grid_output(n).eq.'v' ) v_out = v_out+1
         if( grid_output(n).eq.'w' ) w_out = w_out+1
+        if( grid_output(n).eq.'x' ) x_out = x_out+1
+        if( grid_output(n).eq.'y' ) y_out = y_out+1
+        if( grid_output(n).eq.'z' ) z_out = z_out+1
       enddo
 
       s_out = sout2d+sout3d
@@ -2095,6 +2109,8 @@
       if(dowr) write(outfile,*) '  u_out  = ',u_out
       if(dowr) write(outfile,*) '  v_out  = ',v_out
       if(dowr) write(outfile,*) '  w_out  = ',w_out
+      if(dowr) write(outfile,*) '  x_out  = ',x_out
+      if(dowr) write(outfile,*) '  y_out  = ',y_out
       if(dowr) write(outfile,*) '  z_out  = ',z_out
 
       if(dowr) write(outfile,*)
@@ -2116,7 +2132,7 @@
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-      subroutine writeout(srec,urec,vrec,wrec,rtime,dt,fnum,nwrite,qname,                      &
+      subroutine writeout(srec,urec,vrec,wrec,xrec,yrec,zrec,rtime,dt,fnum,nwrite,qname,       &
                         name_output,desc_output,unit_output,grid_output,cmpr_output,           &
                         xh,xf,uf,yh,yf,vf,xfref,yfref,                                         &
                         rds,sigma,rdsf,sigmaf,zh,zf,mf,gx,gy,wprof,                            &
@@ -2162,7 +2178,7 @@
       ! netcdf-format output.
       !----------------------------------------------------------
 
-      integer, intent(inout) :: srec,urec,vrec,wrec
+      integer, intent(inout) :: srec,urec,vrec,wrec,xrec,yrec,zrec
       real, intent(inout) :: rtime,dt
       integer, intent(in) :: fnum,nwrite
       character(len=3), dimension(maxq), intent(in) :: qname
@@ -2255,10 +2271,10 @@
       real :: tnew,pnew,thold,thnew,rdt,qv,ql,thv
       real :: tem,r1,r2,epsd,pint,plast
       character(len=8) :: text1
-      logical :: opens,openu,openv,openw,foundit
+      logical :: opens,openu,openv,openw,openx,openy,openz,foundit
       logical, parameter :: dosfcflx = .true.
 #ifdef MPI
-      character(len=80) sname,uname,vname,wname
+      character(len=80) sname,uname,vname,wname,xname,yname,zname
       integer, dimension(MPI_STATUS_SIZE) :: status
       logical :: doit
       integer, parameter :: nlim = 1000
@@ -2282,6 +2298,9 @@
       openu = .false.
       openv = .false.
       openw = .false.
+      openx = .false.
+      openy = .false.
+      openz = .false.
 
       ncid = 1
       time_index = 1
@@ -2290,6 +2309,7 @@
 
   IF(output_format.eq.1)THEN
   ! grads stuff:
+!-----------------------------------------------------------------------
   IF( output_filetype.eq.1 .and. myid.eq.nodemaster )THEN
     ! one output file:
     if(dowr) write(outfile,*)
@@ -2325,6 +2345,29 @@
            recl=(nx*ny*4),status='unknown')
       openw = .true.
     endif
+    if(x_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_utlm.dat             '
+      if(dowr) write(outfile,*) string
+      open(unit=56,file=string,form='unformatted',access='direct',   &
+           recl=((nx+1)*ny*4),status='unknown')
+      openx = .true.
+    endif
+    if(y_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_vtlm.dat             '
+      if(dowr) write(outfile,*) string
+      open(unit=57,file=string,form='unformatted',access='direct',   &
+           recl=(nx*(ny+1)*4),status='unknown')
+      openy = .true.
+    endif
+    if(z_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_wtlm.dat             '
+      if(dowr) write(outfile,*) string
+      open(unit=58,file=string,form='unformatted',access='direct',   &
+           recl=(nx*ny*4),status='unknown')
+      openz = .true.
+    endif
+    string(totlen+1:totlen+22) = '                      '
+!-----------------------------------------------------------------------
   ELSEIF( output_filetype.eq.2 .and. myid.eq.nodemaster )THEN
     ! one output file per output time:
     if(s_out.ge.1)then
@@ -2364,6 +2407,32 @@
            recl=(nx*ny*4),status='unknown')
       openw = .true.
     endif
+    if(x_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_XXXXXX_utlm.dat      '
+      write(string(totlen+2:totlen+7),102) nwrite
+      if(dowr) write(outfile,*) string
+      open(unit=56,file=string,form='unformatted',access='direct',   &
+           recl=((nx+1)*ny*4),status='unknown')
+      openx = .true.
+    endif
+    if(y_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_XXXXXX_vtlm.dat      '
+      write(string(totlen+2:totlen+7),102) nwrite
+      if(dowr) write(outfile,*) string
+      open(unit=57,file=string,form='unformatted',access='direct',   &
+           recl=(nx*(ny+1)*4),status='unknown')
+      openy = .true.
+    endif
+    if(z_out.ge.1.and.fnum.ne.71)then
+      string(totlen+1:totlen+22) = '_XXXXXX_wtlm.dat      '
+      write(string(totlen+2:totlen+7),102) nwrite
+      if(dowr) write(outfile,*) string
+      open(unit=58,file=string,form='unformatted',access='direct',   &
+           recl=(nx*ny*4),status='unknown')
+      openz = .true.
+    endif
+    string(totlen+1:totlen+22) = '                      '
+!-----------------------------------------------------------------------
   ELSEIF(output_filetype.eq.3)THEN
     ! one output file per output time AND one output file per processor:
     ! (MPI only)
@@ -2373,27 +2442,39 @@
       uname = '                                                                                '
       vname = '                                                                                '
       wname = '                                                                                '
+      xname = '                                                                                '
+      yname = '                                                                                '
+      zname = '                                                                                '
 
     if(strlen.gt.0)then
       sname(1:strlen) = output_path(1:strlen)
       uname(1:strlen) = output_path(1:strlen)
       vname(1:strlen) = output_path(1:strlen)
       wname(1:strlen) = output_path(1:strlen)
+      xname(1:strlen) = output_path(1:strlen)
+      yname(1:strlen) = output_path(1:strlen)
+      zname(1:strlen) = output_path(1:strlen)
     endif
 
       sname(strlen+1:strlen+baselen) = output_basename(1:baselen)
       uname(strlen+1:strlen+baselen) = output_basename(1:baselen)
       vname(strlen+1:strlen+baselen) = output_basename(1:baselen)
       wname(strlen+1:strlen+baselen) = output_basename(1:baselen)
+      xname(strlen+1:strlen+baselen) = output_basename(1:baselen)
+      yname(strlen+1:strlen+baselen) = output_basename(1:baselen)
+      zname(strlen+1:strlen+baselen) = output_basename(1:baselen)
 
       if(fnum.eq.51)then
-        sname(totlen+1:totlen+22) = '_XXXXXX_YYYYYY_s.dat  '
+        sname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_s.dat  '
       elseif(fnum.eq.71)then
-        sname(totlen+1:totlen+22) = '_XXXXXX_YYYYYY_i.dat  '
+        sname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_i.dat  '
       endif
-      uname(totlen+1:totlen+22) = '_XXXXXX_YYYYYY_u.dat  '
-      vname(totlen+1:totlen+22) = '_XXXXXX_YYYYYY_v.dat  '
-      wname(totlen+1:totlen+22) = '_XXXXXX_YYYYYY_w.dat  '
+      uname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_u.dat   '
+      vname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_v.dat   '
+      wname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_w.dat   '
+      xname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_utlm.dat'
+      yname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_vtlm.dat'
+      zname(totlen+1:totlen+23) = '_XXXXXX_YYYYYY_wtlm.dat'
 
       write(sname(totlen+2:totlen+ 7),100) myid
       write(sname(totlen+9:totlen+14),100) nwrite
@@ -2406,6 +2487,15 @@
 
       write(wname(totlen+2:totlen+ 7),100) myid
       write(wname(totlen+9:totlen+14),100) nwrite
+
+      write(xname(totlen+2:totlen+ 7),100) myid
+      write(xname(totlen+9:totlen+14),100) nwrite
+
+      write(yname(totlen+2:totlen+ 7),100) myid
+      write(yname(totlen+9:totlen+14),100) nwrite
+
+      write(zname(totlen+2:totlen+ 7),100) myid
+      write(zname(totlen+9:totlen+14),100) nwrite
 
 100   format(i6.6)
 
@@ -2439,6 +2529,31 @@
              recl=(ni*nj*4),status='unknown')
         openw = .true.
       endif
+
+      if(x_out.ge.1.and.fnum.ne.71)then
+        if(dowr) write(outfile,*) '  myid,xname=',myid,'   ',xname
+        open(unit=56,file=xname,                   &
+             form='unformatted',access='direct',   &
+             recl=((ni+1)*nj*4),status='unknown')
+        openx = .true.
+      endif
+
+      if(y_out.ge.1.and.fnum.ne.71)then
+        if(dowr) write(outfile,*) '  myid,yname=',myid,'   ',yname
+        open(unit=57,file=yname,                   &
+             form='unformatted',access='direct',   &
+             recl=(ni*(nj+1)*4),status='unknown')
+        openy = .true.
+      endif
+
+      if(z_out.ge.1.and.fnum.ne.71)then
+        if(dowr) write(outfile,*) '  myid,zname=',myid,'   ',zname
+        open(unit=58,file=zname,                   &
+             form='unformatted',access='direct',   &
+             recl=(ni*nj*4),status='unknown')
+        openz = .true.
+      endif
+
       !  limit to "nlim" writes at a time:
       IF( numprocs.gt.nlim )THEN
         doit = .false.
@@ -2447,12 +2562,14 @@
           call MPI_WAIT(reqs,status,ierr)
         ENDIF
       ENDIF
+    string(totlen+1:totlen+22) = '                      '
 #else
     print *,'  output_filetype = ',output_filetype
     print *,'  This option is only available for MPI runs '
     print *,'  Stopping cm1 .... '
     call stopcm1
 #endif
+!-----------------------------------------------------------------------
   ELSEIF(output_filetype.eq.4)THEN
     ! (MPI only)
 #ifdef MPI
@@ -2527,6 +2644,7 @@
         openw = .true.
       endif
     ENDIF ! endif for myid.eq.nodemaster
+    string(totlen+1:totlen+22) = '                      '
 #else
     print *,'  output_filetype = ',output_filetype
     print *,'  This option is only available for MPI runs '
@@ -2535,6 +2653,7 @@
 #endif
   ENDIF ! endif for outout_filetype
   ENDIF ! endif for output_format=1
+!-----------------------------------------------------------------------
 #ifdef NETCDF
   IF(output_format.eq.2)THEN
     ! netcdf stuff:
@@ -2549,12 +2668,16 @@
     endif
   ENDIF
 #endif
+!-----------------------------------------------------------------------
 
   if(output_filetype.ge.2)then
     srec=1
     urec=1
     vrec=1
     wrec=1
+    xrec=1
+    yrec=1
+    zrec=1
   endif
 
 
@@ -5068,22 +5191,6 @@
           enddo
           enddo
 
-! Added by Aaron Wang, 7/5/2019
-        elseif(     trim(name_output(n)).eq.'utlm' )then
-
-          dumu = 0.0
-
-          !$omp parallel do default(shared)  &
-          !$omp private(i,j,k)
-          do k=1,min(nktlm,maxk)
-          do j=1,nj
-          do i=1,ni+1
-            dumu(i,j,k) = utlm(i,j,k)
-          enddo
-          enddo
-          enddo
-! End, Aaron Wang, 7/5/2019
-
         elseif( trim(name_output(n)).eq.'upert' )then
 
           !$omp parallel do default(shared)  &
@@ -6002,6 +6109,172 @@
                     mynode,nodemaster,nodes,d2is,d2js,d3is,d3js)
 
         endif  not_interp_w
+
+    !------------------------------------------------------------------!
+    !  x points (3d):
+    !  Place data to be written into "dumu" array
+
+      ELSEIF( grid_output(n).eq.'x' )THEN  gridtype
+
+        not_interp_x:  &
+        if( fnum.ne.71 )then
+
+!!!        if( myid.eq.0 ) print *,'    x vars '
+
+        arrayx:  &
+        if(     trim(name_output(n)).eq.'utlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm
+          do j=1,nj
+          do i=1,ni+1
+            dumu(i,j,k) = utlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        else  arrayx
+
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'  unrecognized x variable '
+          if(myid.eq.0) print *,'  n,name_output = ',n,trim(name_output(n))
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'      87547 '
+          call stopcm1
+
+        endif  arrayx
+
+        call writeo(ni+1,nj,1,nktlm,nx+1,ny,dumu(ib,jb,1),trim(name_output(n)),  &
+                    ni,nj,ngxy,myid,numprocs,nodex,nodey,xrec,56,               &
+                    ncid,time_index,output_format,output_filetype,              &
+                    dat1(1,1),dat2(1,1),dat3(1,1,1),reqt,ppnode,d3n,d3t,        &
+                    mynode,nodemaster,nodes,d2iu,d2ju,d3iu,d3ju)
+
+        endif  not_interp_x
+
+    !------------------------------------------------------------------!
+    !  y points (3d):
+    !  Place data to be written into "dumv" array
+
+      ELSEIF( grid_output(n).eq.'y' )THEN  gridtype
+
+        not_interp_y:  &
+        if( fnum.ne.71 )then
+
+!!!        if( myid.eq.0 ) print *,'    y vars '
+
+        arrayy:  &
+        if(     trim(name_output(n)).eq.'vtlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm
+          do j=1,nj+1
+          do i=1,ni
+            dumv(i,j,k) = vtlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        else  arrayy
+
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'  unrecognized y variable '
+          if(myid.eq.0) print *,'  n,name_output = ',n,trim(name_output(n))
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'      87547 '
+          call stopcm1
+
+        endif  arrayy
+
+        call writeo(ni,nj+1,1,nktlm,nx,ny+1,dumv(ib,jb,1),trim(name_output(n)),  &
+                    ni,nj,ngxy,myid,numprocs,nodex,nodey,yrec,57,               &
+                    ncid,time_index,output_format,output_filetype,              &
+                    dat1(1,1),dat2(1,1),dat3(1,1,1),reqt,ppnode,d3n,d3t,        &
+                    mynode,nodemaster,nodes,d2iv,d2jv,d3iv,d3jv)
+
+        endif  not_interp_y
+
+    !------------------------------------------------------------------!
+    !  z points (3d):
+    !  Place data to be written into "dumw" array
+
+      ELSEIF( grid_output(n).eq.'z' )THEN  gridtype
+
+        not_interp_z:  &
+        if( fnum.ne.71 )then
+
+!!!        if( myid.eq.0 ) print *,'    z vars '
+
+        arrayz:  &
+        if(     trim(name_output(n)).eq.'wtlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm+1
+          do j=1,nj
+          do i=1,ni
+            dumw(i,j,k) = wtlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        elseif(     trim(name_output(n)).eq.'t13tlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm+1
+          do j=1,nj
+          do i=1,ni
+            dumw(i,j,k) = t13tlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        elseif(     trim(name_output(n)).eq.'t23tlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm+1
+          do j=1,nj
+          do i=1,ni
+            dumw(i,j,k) = t23tlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        elseif(     trim(name_output(n)).eq.'nut_tlm' )then
+
+          !$omp parallel do default(shared)  &
+          !$omp private(i,j,k)
+          do k=1,nktlm+1
+          do j=1,nj
+          do i=1,ni
+            dumw(i,j,k) = nut_tlm(i,j,k)
+          enddo
+          enddo
+          enddo
+
+        else  arrayz
+
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'  unrecognized z variable '
+          if(myid.eq.0) print *,'  n,name_output = ',n,trim(name_output(n))
+          if(myid.eq.0) print *
+          if(myid.eq.0) print *,'      87547 '
+          call stopcm1
+
+        endif  arrayz
+
+        call writeo(ni,nj,1,nktlm+1,nx,ny,dumw(ib,jb,1),trim(name_output(n)),    &
+                    ni,nj,ngxy,myid,numprocs,nodex,nodey,zrec,58,               &
+                    ncid,time_index,output_format,output_filetype,              &
+                    dat1(1,1),dat2(1,1),dat3(1,1,1),reqt,ppnode,d3n,d3t,        &
+                    mynode,nodemaster,nodes,d2is,d2js,d3is,d3js)
+
+        endif  not_interp_z
+
     !------------------------------------------------------------------!
 
       ELSE  gridtype
@@ -6041,6 +6314,9 @@
       if( openu ) close(unit=52)
       if( openv ) close(unit=53)
       if( openw ) close(unit=54)
+      if( openx ) close(unit=56)
+      if( openy ) close(unit=57)
+      if( openz ) close(unit=58)
 #ifdef NETCDF
     ELSEIF( output_format.eq.2 )THEN
       if( opens ) call disp_err( nf90_close(ncid) , .true. )
@@ -6434,6 +6710,7 @@
 
       ctlmax = 4
       if( output_interp.eq.1 ) ctlmax = 5
+      if( dotlm ) ctlmax = 8
 
       ctlloop:  &
       DO ctl = 1 , ctlmax
@@ -6484,7 +6761,7 @@
           endif
           doit = .true.
           endif
-        ELSEIF( ctl.eq.5 )THEN
+        ELSEIF( ctl.eq.5 .and. terrain_flag .and. output_interp.eq.1  )THEN
           if( s_out.ge.1 )then
           string(totlen+1:totlen+22) = '_i.ctl                '
           if(dowr) write(outfile,*) string
@@ -6495,10 +6772,47 @@
           endif
           doit = .true.
           endif
-        ELSE
-          print *,'  98371 '
-          call stopcm1
+        ELSEIF( ctl.eq.6 .and. dotlm )THEN
+          if( x_out.ge.1 )then
+          string(totlen+1:totlen+22) = '_utlm.ctl             '
+          if(dowr) write(outfile,*) string
+          if(output_filetype.eq.1)then
+            sstring(baselen+1:baselen+1+12) = '_utlm.dat   '
+          elseif(output_filetype.ge.2)then
+            sstring(baselen+1:baselen+1+15) = '_00%y4_utlm.dat'
+          endif
+          doit = .true.
+          endif
+        ELSEIF( ctl.eq.7 .and. dotlm )THEN
+          if( x_out.ge.1 )then
+          string(totlen+1:totlen+22) = '_vtlm.ctl             '
+          if(dowr) write(outfile,*) string
+          if(output_filetype.eq.1)then
+            sstring(baselen+1:baselen+1+12) = '_vtlm.dat   '
+          elseif(output_filetype.ge.2)then
+            sstring(baselen+1:baselen+1+15) = '_00%y4_vtlm.dat'
+          endif
+          doit = .true.
+          endif
+        ELSEIF( ctl.eq.8 .and. dotlm )THEN
+          if( x_out.ge.1 )then
+          string(totlen+1:totlen+22) = '_wtlm.ctl             '
+          if(dowr) write(outfile,*) string
+          if(output_filetype.eq.1)then
+            sstring(baselen+1:baselen+1+12) = '_wtlm.dat   '
+          elseif(output_filetype.ge.2)then
+            sstring(baselen+1:baselen+1+15) = '_00%y4_wtlm.dat'
+          endif
+          doit = .true.
+          endif
+
+!!!        ELSE
+!!!          print *,'  98371 '
+!!!          call stopcm1
+
         ENDIF
+
+      print *,'  ctl,doit = ',ctl,doit
 
         dowrite:  &
         IF( doit )THEN
@@ -6510,7 +6824,7 @@
           write(50,202)
           write(50,203) grads_undef
 
-          IF( ctl.eq.2 )THEN
+          IF( ctl.eq.2 .or. ctl.eq.6 )THEN
             ! u staggering:
             if(stretch_x.ge.1)then
               write(50,214) nx+1
@@ -6532,7 +6846,7 @@
             endif
           ENDIF
 
-          IF( ctl.eq.3 )THEN
+          IF( ctl.eq.3 .or. ctl.eq.7 )THEN
             ! v staggering:
             if(stretch_y.ge.1)then
               write(50,215) ny+1
@@ -6554,6 +6868,13 @@
             endif
           ENDIF
 
+        IF( ctl.eq.6 .or. ctl.eq.7 )THEN
+            ! s staggering:
+            write(50,206) nktlm,0.001*0.5*dztlm,0.001*dztlm
+        ELSEIF( ctl.eq.8 )THEN
+            ! w staggering:
+            write(50,206) nktlm+1,0.0,0.001*dztlm
+        ELSE
           IF( ctl.eq.4 )THEN
             ! w staggering:
             if(stretch_z.eq.0)then
@@ -6575,6 +6896,7 @@
               enddo
             endif
           ENDIF
+        ENDIF
 
           if(output_filetype.eq.1)then
             if( tapfrq.gt.1.0e-10 )then
@@ -6610,6 +6932,21 @@
             write(50,208) w_out
             n1 = s_out+u_out+v_out+1
             n2 = s_out+u_out+v_out+w_out
+          ELSEIF( ctl.eq.6 )THEN
+            ! x vars:
+            write(50,208) x_out
+            n1 = s_out+u_out+v_out+w_out+1
+            n2 = s_out+u_out+v_out+w_out+x_out
+          ELSEIF( ctl.eq.7 )THEN
+            ! y vars:
+            write(50,208) y_out
+            n1 = s_out+u_out+v_out+w_out+x_out+1
+            n2 = s_out+u_out+v_out+w_out+x_out+y_out
+          ELSEIF( ctl.eq.8 )THEN
+            ! z vars:
+            write(50,208) z_out
+            n1 = s_out+u_out+v_out+w_out+x_out+y_out+1
+            n2 = s_out+u_out+v_out+w_out+x_out+y_out+z_out
           ENDIF
 
           do n = n1,n2
@@ -6626,6 +6963,10 @@
               write(50,209) name_output(n),maxk  ,desc_output(n),a12
             elseif( grid_output(n).eq.'w' )then
               write(50,209) name_output(n),maxk+1,desc_output(n),a12
+            elseif( grid_output(n).eq.'x' .or. grid_output(n).eq.'y' )then
+              write(50,209) name_output(n),nktlm,desc_output(n),a12
+            elseif( grid_output(n).eq.'z' )then
+              write(50,209) name_output(n),nktlm+1,desc_output(n),a12
             else
               print *,'  98371 '
               call stopcm1

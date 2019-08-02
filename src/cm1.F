@@ -47,7 +47,7 @@
       implicit none
 
       integer :: nstep,nstep0
-      integer :: srec,sirec,urec,vrec,wrec,nrec,prec,trecs,trecw,trecy,trecz,arecs,arecw
+      integer :: srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec,trecs,trecw,trecy,trecz,arecs,arecw
       integer :: nrst,nwrite,nwritet,nwritea,nwriteh
       integer :: rbufsz,num_soil_layers,ndt
       real :: dt,dtlast
@@ -216,6 +216,9 @@
       urec=1
       vrec=1
       wrec=1
+      xrec=1
+      yrec=1
+      zrec=1
       nrec=1
       prec=1
       trecs=1
@@ -1719,7 +1722,7 @@
 
         startup = .false.
         restarted = .true.
-        call     read_restart(nstep,srec,sirec,urec,vrec,wrec,nrec,prec,           &
+        call     read_restart(nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec, &
                               trecs,trecw,arecs,arecw,                             &
                               nwrite,nwritet,nwritea,nrst,num_soil_layers,nrad2d,  &
                               dt,dtlast,mtime,ndt,adt,acfl,dbldt,mass1,            &
@@ -2361,7 +2364,7 @@
             wdiag = 0.0
             kdiag = 0.0
           ENDIF
-          call writeout(frec,urec,vrec,wrec,rtime,dt,fnum,nwrite,qname,                        &
+          call writeout(frec,urec,vrec,wrec,xrec,yrec,zrec,rtime,dt,fnum,nwrite,qname,         &
                         name_output,desc_output,unit_output,grid_output,cmpr_output,           &
                         xh,xf,uf,yh,yf,vf,xfref,yfref,                                         &
                         rds,sigma,rdsf,sigmaf,zh,zf,mf,gx,gy,wprof,                            &
@@ -2617,7 +2620,7 @@
 
 
       if( dorestart )then
-        call     write_restart(nstep,srec,sirec,urec,vrec,wrec,nrec,prec,           &
+        call     write_restart(nstep,srec,sirec,urec,vrec,wrec,xrec,yrec,zrec,nrec,prec, &
                                trecs,trecw,arecs,arecw,                             &
                                nwrite,nwritet,nwritea,nrst,num_soil_layers,nrad2d,  &
                                dt,dtlast,mtime,ndt,adt,acfl,dbldt,mass1,            &

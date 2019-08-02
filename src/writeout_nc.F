@@ -69,14 +69,14 @@
 
       integer :: cdfid    ! ID for the netCDF file to be created
       integer :: status,dimid,varid
-      integer :: niid,njid,nkid,nip1id,njp1id,nkp1id,timeid,oneid,tfile,num_write
+      integer :: niid,njid,nkid,nktlmid,nip1id,njp1id,nkp1id,nktlmp1id,timeid,oneid,tfile,num_write
       character(len=8) chid
 
 !-------------------------------------------------------------
 ! Declare and set integer values for the netCDF dimensions 
 !-------------------------------------------------------------
 
-      integer :: ival,jval,kval,ivalp1,jvalp1,kvalp1
+      integer :: ival,jval,kval,ivalp1,jvalp1,kvalp1,kvaltlm,kvaltlmp1
       real :: actual_time
 
       logical :: allinfo
@@ -157,6 +157,9 @@
     kval = min(maxk,nk)
     kvalp1 = min(maxk+1,nk+1)
 
+    kvaltlm = nktlm
+    kvaltlmp1 = nktlm+1
+
 !--------------------------------------------------------------
 !  if this is the start of a file, then do this stuff:
 
@@ -213,6 +216,10 @@
       call disp_err( nf90_def_dim(ncid,'nip1',ivalp1,nip1id) , .true. )
       call disp_err( nf90_def_dim(ncid,'njp1',jvalp1,njp1id) , .true. )
       call disp_err( nf90_def_dim(ncid,'nkp1',kvalp1,nkp1id) , .true. )
+      IF( dotlm )THEN
+        call disp_err( nf90_def_dim(ncid,'nktlm',kvaltlm,nktlmid) , .true. )
+        call disp_err( nf90_def_dim(ncid,'nktlmp1',kvaltlmp1,nktlmp1id) , .true. )
+      ENDIF
       call disp_err( nf90_def_dim(ncid,'time',nf90_unlimited,timeid) , .true. )
       call disp_err( nf90_def_dim(ncid,'one',1,oneid) , .true. )
 
@@ -287,6 +294,18 @@
       call disp_err( nf90_put_att(ncid,varid,"long_name","nominal height of staggered w grid points") , .true. )
       call disp_err( nf90_put_att(ncid,varid,"units","km") , .true. )
 
+      IF( dotlm )THEN
+
+        call disp_err( nf90_def_var(ncid,"zhtlm",nf90_float,nktlmid,varid) , .true. )
+        call disp_err( nf90_put_att(ncid,varid,"long_name","nominal height of scalar grid points for TLM") , .true. )
+        call disp_err( nf90_put_att(ncid,varid,"units","km") , .true. )
+
+        call disp_err( nf90_def_var(ncid,"zftlm",nf90_float,nktlmp1id,varid) , .true. )
+        call disp_err( nf90_put_att(ncid,varid,"long_name","nominal height of staggered w grid points for TLM") , .true. )
+        call disp_err( nf90_put_att(ncid,varid,"units","km") , .true. )
+
+      ENDIF
+
     ENDIF
 
 !--------------------------------------------------------
@@ -299,6 +318,10 @@
         call disp_err( nf90_inq_dimid(ncid,'nip1',nip1id) , .true. )
         call disp_err( nf90_inq_dimid(ncid,'njp1',njp1id) , .true. )
         call disp_err( nf90_inq_dimid(ncid,'nkp1',nkp1id) , .true. )
+        IF( dotlm )THEN
+          call disp_err( nf90_inq_dimid(ncid,'nktlm',nktlmid) , .true. )
+          call disp_err( nf90_inq_dimid(ncid,'nktlmp1',nktlmp1id) , .true. )
+        ENDIF
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !--- 2D and 3D vars:
@@ -320,6 +343,12 @@
           call disp_err( nf90_def_var(ncid,trim(name_output(n)),nf90_float,(/niid,njid,nkp1id,timeid/),varid) , .true. )
         elseif( grid_output(n).eq.'2' )then
           call disp_err( nf90_def_var(ncid,trim(name_output(n)),nf90_float,(/niid,njid,timeid/),varid) , .true. )
+        elseif( grid_output(n).eq.'x' )then
+          call disp_err( nf90_def_var(ncid,trim(name_output(n)),nf90_float,(/nip1id,njid,nktlmid,timeid/),varid) , .true. )
+        elseif( grid_output(n).eq.'y' )then
+          call disp_err( nf90_def_var(ncid,trim(name_output(n)),nf90_float,(/niid,njp1id,nktlmid,timeid/),varid) , .true. )
+        elseif( grid_output(n).eq.'z' )then
+          call disp_err( nf90_def_var(ncid,trim(name_output(n)),nf90_float,(/niid,njid,nktlmp1id,timeid/),varid) , .true. )
         else
           print *,'  Unknown setting for grid_output = ',grid_output(n)
           print *,'    67329 '
@@ -328,11 +357,11 @@
         call disp_err( nf90_put_att(ncid,varid,"long_name",trim(desc_output(n))) , .true. )
         call disp_err( nf90_put_att(ncid,varid,"units",trim(unit_output(n))) , .true. )
 #ifdef NCFPLUS
-        if(     grid_output(n).eq.'s' .or. grid_output(n).eq.'w' )then
+        if(     grid_output(n).eq.'s' .or. grid_output(n).eq.'w' .or. grid_output(n).eq.'z' )then
           call disp_err( NF90_DEF_VAR_CHUNKING(ncid,varid,NF90_CHUNKED,(/chkx,chky,1,1/)) , .true. )
-        elseif( grid_output(n).eq.'u' )then
+        elseif( grid_output(n).eq.'u' .or. grid_output(n).eq.'x' )then
           call disp_err( NF90_DEF_VAR_CHUNKING(ncid,varid,NF90_CHUNKED,(/chkxp1,chky,1,1/)) , .true. )
-        elseif( grid_output(n).eq.'v' )then
+        elseif( grid_output(n).eq.'v' .or. grid_output(n).eq.'y' )then
           call disp_err( NF90_DEF_VAR_CHUNKING(ncid,varid,NF90_CHUNKED,(/chkx,chkyp1,1,1/)) , .true. )
         elseif( grid_output(n).eq.'2' )then
           call disp_err( NF90_DEF_VAR_CHUNKING(ncid,varid,NF90_CHUNKED,(/chkx,chky,1/)) , .true. )
@@ -365,6 +394,9 @@
       call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"nx",nx) , .true. )
       call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"ny",ny) , .true. )
       call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"nz",nz) , .true. )
+      IF( dotlm )THEN
+      call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"nktlm",nktlm) , .true. )
+      ENDIF
 
       call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"imoist",imoist) , .true. )
       call disp_err( nf90_put_att(ncid,NF90_GLOBAL,"sgsmodel",sgsmodel) , .true. )
@@ -524,6 +556,22 @@
         enddo
         call disp_err( nf90_put_var(ncid,varid,dumz,(/1/),(/kvalp1/)) , .true. )
       endif
+
+      IF( dotlm )THEN
+
+        call disp_err( nf90_inq_varid(ncid,'zhtlm',varid) , .true. )
+        do k=1,kval
+          dumz(k) = 0.001*( (k-1)*dztlm + 0.5*dztlm )
+        enddo
+        call disp_err( nf90_put_var(ncid,varid,dumz,(/1/),(/kvaltlm/)) , .true. )
+
+        call disp_err( nf90_inq_varid(ncid,'zftlm',varid) , .true. )
+        do k=1,kvalp1
+          dumz(k) = 0.001*( (k-1)*dztlm )
+        enddo
+        call disp_err( nf90_put_var(ncid,varid,dumz,(/1/),(/kvaltlmp1/)) , .true. )
+
+      ENDIF
 
       ! ... end if info at initial time only
 
