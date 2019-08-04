@@ -1026,7 +1026,7 @@
 !!!      dztlm = zh(1,1,1)/(float(nktlm)-0.5)
 
       ! kcm1tlm: CM1 level to use as an upper boundary condition for the TLM
-      kcm1tlm = 2
+      kcm1tlm = 1
       dztlm = zh(1,1,kcm1tlm)/(float(nktlm)-0.5)
 
       rdztlm = 1.0/dztlm  ! Aaron Wang, 7/3/2019
