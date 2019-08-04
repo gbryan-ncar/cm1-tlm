@@ -1020,12 +1020,15 @@
 ! parameters set by Aaron Wang, 7/2/2019
 ! GHB:  moved this here (after zh,zf are defined), 190707
       nktlm = 20
+
 !!!      dztlm = dz/nktlm
 !!!      dztlm = (zf(1,1,2)-zf(1,1,1))/nktlm
 !!!      dztlm = zh(1,1,1)/(float(nktlm)-0.5)
+
       ! kcm1tlm: CM1 level to use as an upper boundary condition for the TLM
       kcm1tlm = 2
       dztlm = zh(1,1,kcm1tlm)/(float(nktlm)-0.5)
+
       rdztlm = 1.0/dztlm  ! Aaron Wang, 7/3/2019
       kbtlm =  1 - ngz
       ketlm = nktlm + ngz

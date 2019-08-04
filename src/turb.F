@@ -5567,17 +5567,23 @@
 !      stop 12444
 !    endif
 
-    ! for tlm_bbc = 3, level used for reference wind speed
-    !   (190729: for now, just use wind from halfway up fine mesh)
-    ! This is needed because dztlm can actually be smaller than 
-    ! roughness length!
-    k1 = nktlm/2
+    if( tlm_bbc.eq.3 )then
 
-    do j=0,nj+2
-    do i=0,ni+2
-      z1(i,j) = 0.5*(zftlm(k1)+zftlm(k1+1))
-    enddo
-    enddo
+      ! for tlm_bbc = 3, level used for reference wind speed
+      !   (190729: for now, just use wind from 25% up fine mesh)
+      ! This is needed because dztlm can actually be smaller than 
+      ! roughness length!
+      k1 = nint( float(nktlm)/4.0 )
+
+      do j=0,nj+2
+      do i=0,ni+2
+        z1(i,j) = 0.5*(zftlm(k1)+zftlm(k1+1))
+      enddo
+      enddo
+
+!!!      if( myid.eq.0 ) print *,'  k1,z1 = ',k1,z1(1,1)
+
+    endif
 
   !----------------------------------------------
   !  surface (k=1):
@@ -6020,7 +6026,7 @@
 
       dttmp=dtadv/float(nrkmax+1-nrk)
       time = (n-1)*dtadv + dttmp
-      if( myid.eq.0 ) print *,'    niter,nrk,dttmp,time = ',niter,nrk,dttmp,time
+!!!      if( myid.eq.0 ) print *,'    niter,nrk,dttmp,time = ',niter,nrk,dttmp,time
 
 ! TAG compute dumx_utlm, dumy_utlm, dumx_vtlm, dumy_vtlm
 ! Need to check the domain (now this is the key, 7/14/2019)
@@ -6183,7 +6189,7 @@
       call MPI_ALLREDUCE(MPI_IN_PLACE,cfl,1,MPI_REAL,MPI_MAX,MPI_COMM_WORLD,ierr)
 #endif
 
-      if( myid.eq.0 ) print *,'  tlm cfl max = ',cfl
+!!!      if( myid.eq.0 ) print *,'  tlm cfl max = ',cfl
 
 !  if( myid.eq.0 )then
 !    print *,'  new dum3,utlm,dum4,vtlm:'
